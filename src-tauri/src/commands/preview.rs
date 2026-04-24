@@ -68,17 +68,20 @@ pub async fn preview_start(
     project_path: String,
     state: tauri::State<'_, PreviewState>,
 ) -> Result<PreviewInfo, String> {
-    // 기존 서버 종료
-    {
+    // 기존 서버 종료 — MutexGuard 는 `.await` 전에 드랍되어야 함 (Send 제약)
+    let prev_tx = {
         let mut tx_guard = state
             .shutdown_tx
             .lock()
             .map_err(|_| "내부 상태 잠금 실패".to_string())?;
-        if let Some(tx) = tx_guard.take() {
-            let _ = tx.send(());
-            // 짧게 대기 — 포트 해제 여유
-            tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
-        }
+        tx_guard.take()
+    };
+    if let Some(tx) = prev_tx {
+        let _ = tx.send(());
+        // 짧게 대기 — 포트 해제 여유
+        tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
+    }
+    {
         *state.port.lock().map_err(|_| "내부 상태 잠금 실패")? = None;
     }
 
