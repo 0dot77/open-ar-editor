@@ -1,0 +1,91 @@
+{
+  "schemaVersion": "0.1.0",
+  "metadata": {
+    "title": "얼굴 오디오 반응형",
+    "artist": "이미래",
+    "description": "관객의 얼굴을 인식하고 이마 위 3D 오브젝트가 음악에 반응하는 퍼포먼스 작품. 저음/중음/고음에 따라 크기, 회전, 빛이 변화한다.",
+    "createdAt": "2026-04-24T14:00:00+09:00",
+    "updatedAt": "2026-04-25T09:00:00+09:00",
+    "keywords": ["얼굴", "face-tracking", "오디오반응형", "퍼포먼스", "파티클"]
+  },
+  "tracking": {
+    "type": "face",
+    "maxFaces": 1
+  },
+  "scene": {
+    "background": "camera",
+    "units": "meters",
+    "objects": [
+      {
+        "id": "forehead-crown",
+        "type": "model",
+        "label": "이마 왕관 오브젝트",
+        "src": "glb-crown-asset",
+        "position": [0, 0.08, 0],
+        "rotation": [0, 0, 0],
+        "scale": 1.0,
+        "visible": true,
+        "anchorType": "forehead",
+        "loop": true,
+        "material": {
+          "emissiveIntensity": 1.0,
+          "metalness": 0.8,
+          "roughness": 0.2
+        }
+      },
+      {
+        "id": "forehead-particles",
+        "type": "model",
+        "label": "이마 파티클 시스템",
+        "src": "glb-particles-asset",
+        "position": [0, 0.12, 0],
+        "rotation": [0, 0, 0],
+        "scale": 0.5,
+        "visible": true,
+        "anchorType": "forehead"
+      },
+      {
+        "id": "bg-audio-track",
+        "type": "audio",
+        "label": "배경 음악",
+        "src": "audio-bgm-asset",
+        "position": [0, 0, 0],
+        "rotation": [0, 0, 0],
+        "scale": 1,
+        "visible": false,
+        "anchorType": "world",
+        "autoplay": false,
+        "loop": true
+      }
+    ]
+  },
+  "assets": [
+    {
+      "id": "glb-crown-asset",
+      "type": "model",
+      "path": "assets/models/crown.glb",
+      "originalPath": "/Users/mirae/Desktop/crown.glb",
+      "size": 524288,
+      "hash": "d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5",
+      "mimeType": "model/gltf-binary"
+    },
+    {
+      "id": "glb-particles-asset",
+      "type": "model",
+      "path": "assets/models/particles.glb",
+      "originalPath": "/Users/mirae/Desktop/particles.glb",
+      "size": 131072,
+      "hash": "e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6",
+      "mimeType": "model/gltf-binary"
+    },
+    {
+      "id": "audio-bgm-asset",
+      "type": "audio",
+      "path": "assets/audio/performance-bgm.mp3",
+      "originalPath": "/Users/mirae/Desktop/bgm.mp3",
+      "size": 3145728,
+      "hash": "f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1",
+      "mimeType": "audio/mpeg"
+    }
+  ]
+}

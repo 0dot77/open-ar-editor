@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "0.1.0",
+  "bindings": [
+    {
+      "id": "binding-audio-low-scale",
+      "source": "audio.low",
+      "target": "objects.forehead-crown.scale",
+      "map": {
+        "in": [0, 1],
+        "out": [0.8, 2.5],
+        "clamp": true,
+        "smooth": 0.15,
+        "invert": false
+      },
+      "enabled": true
+    },
+    {
+      "id": "binding-audio-high-emissive",
+      "source": "audio.high",
+      "target": "objects.forehead-crown.material.emissiveIntensity",
+      "map": {
+        "in": [0, 1],
+        "out": [0.2, 4.0],
+        "clamp": true,
+        "smooth": 0.05
+      },
+      "enabled": true
+    },
+    {
+      "id": "binding-face-yaw-rotation",
+      "source": "face.yaw",
+      "target": "objects.forehead-particles.rotation.y",
+      "map": {
+        "in": [-1, 1],
+        "out": [-0.5, 0.5],
+        "clamp": true,
+        "smooth": 0.2
+      },
+      "enabled": true
+    }
+  ]
+}

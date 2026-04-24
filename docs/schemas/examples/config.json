@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "0.1.0",
+  "tracking": {
+    "type": "image",
+    "target": "assets/targets/poster-target.mind",
+    "preview": "assets/targets/poster-target-preview.jpg"
+  },
+  "scene": {
+    "background": "camera",
+    "units": "meters",
+    "objects": [
+      {
+        "id": "glb-main-sculpture",
+        "type": "model",
+        "label": "주 조각 오브젝트",
+        "src": "assets/models/sculpture.glb",
+        "position": [0, 0.2, 0],
+        "rotation": [0, 0, 0],
+        "scale": [0.3, 0.3, 0.3],
+        "visible": false,
+        "anchorType": "target",
+        "animationName": "Idle",
+        "loop": true,
+        "material": {
+          "emissiveIntensity": 0.5
+        }
+      },
+      {
+        "id": "video-overlay-plane",
+        "type": "video",
+        "label": "영상 화면",
+        "src": "assets/videos/promo.mp4",
+        "position": [0, -0.1, 0.01],
+        "rotation": [0, 0, 0],
+        "scale": [0.4, 0.225, 1],
+        "visible": false,
+        "anchorType": "target",
+        "autoplay": false,
+        "loop": false,
+        "material": {
+          "opacity": 1.0
+        },
+        "events": [
+          {
+            "trigger": "tap",
+            "action": "playVideo",
+            "target": "video-overlay-plane"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "runtimeVersion": "0.1.0",
+  "schemaVersions": {
+    "project": "0.1.0",
+    "config": "0.1.0",
+    "graph": "0.1.0",
+    "bindings": "0.1.0"
+  },
+  "libraries": {
+    "mindar": "1.2.5",
+    "three": "0.168.0"
+  },
+  "exportedAt": "2026-04-25T10:30:00+09:00",
+  "sourceChecksum": {
+    "projectWebar": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+    "graphWebar": "b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3",
+    "bindingsWebar": "c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+  },
+  "projectTitle": "포스터 기반 AR",
+  "artist": "홍길동",
+  "exportNote": "초기 전시 배포 — GitHub Pages 배포용"
+}

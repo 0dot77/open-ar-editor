@@ -1,0 +1,104 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://open-ar-editor/schemas/manifest.schema.json",
+  "title": "manifest",
+  "description": "장기 보존용 export 기록. 런타임 버전, 스키마 버전, 라이브러리 버전을 기록해 미래의 복원을 가능하게 한다.",
+  "type": "object",
+  "required": ["runtimeVersion", "schemaVersions", "libraries", "exportedAt"],
+  "additionalProperties": false,
+  "properties": {
+    "runtimeVersion": {
+      "type": "string",
+      "description": "export 시 사용한 open-ar-editor 런타임 버전 (semver)",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "examples": ["0.1.0"]
+    },
+    "schemaVersions": {
+      "type": "object",
+      "description": "각 스키마 파일의 버전 기록. 미래 마이그레이션 판단 기준.",
+      "required": ["project", "config", "graph", "bindings"],
+      "additionalProperties": false,
+      "properties": {
+        "project": {
+          "type": "string",
+          "description": "project.webar.schema.json 버전",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "config": {
+          "type": "string",
+          "description": "config.schema.json 버전",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "graph": {
+          "type": "string",
+          "description": "graph.webar.schema.json 버전",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "bindings": {
+          "type": "string",
+          "description": "bindings.webar.schema.json 버전",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        }
+      }
+    },
+    "libraries": {
+      "type": "object",
+      "description": "사용한 외부 라이브러리 버전. CDN 없이 장기 보존 시 동일 버전 번들을 포함해야 한다.",
+      "required": ["mindar", "three"],
+      "additionalProperties": false,
+      "properties": {
+        "mindar": {
+          "type": "string",
+          "description": "MindAR 버전 (semver)",
+          "examples": ["1.2.5"]
+        },
+        "three": {
+          "type": "string",
+          "description": "Three.js 버전 (semver)",
+          "examples": ["0.168.0"]
+        },
+        "arjs": {
+          "type": "string",
+          "description": "AR.js 버전 (GPS/마커 사용 시)",
+          "examples": ["3.4.5"]
+        }
+      }
+    },
+    "exportedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "export 완료 시각 (ISO 8601)"
+    },
+    "sourceChecksum": {
+      "type": "object",
+      "description": "원본 프로젝트 파일 체크섬 (선택). 무결성 검증용.",
+      "additionalProperties": false,
+      "properties": {
+        "projectWebar": {
+          "type": "string",
+          "description": "project.webar.json SHA-256"
+        },
+        "graphWebar": {
+          "type": "string",
+          "description": "graph.webar.json SHA-256"
+        },
+        "bindingsWebar": {
+          "type": "string",
+          "description": "bindings.webar.json SHA-256"
+        }
+      }
+    },
+    "projectTitle": {
+      "type": "string",
+      "description": "작품 제목 (README 자동 생성용 캐시)"
+    },
+    "artist": {
+      "type": "string",
+      "description": "작가 이름 (README 자동 생성용 캐시)"
+    },
+    "exportNote": {
+      "type": "string",
+      "description": "export 시 작가가 남기는 메모"
+    }
+  }
+}

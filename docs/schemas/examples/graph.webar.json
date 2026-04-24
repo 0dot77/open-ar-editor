@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "0.1.0",
+  "nodes": [
+    {
+      "id": "target-found-001",
+      "type": "event.targetFound",
+      "label": "타깃 인식됨",
+      "position": { "x": 50, "y": 100 }
+    },
+    {
+      "id": "show-model-001",
+      "type": "action.show",
+      "label": "3D 모델 보이기",
+      "objectId": "glb-main-sculpture",
+      "position": { "x": 300, "y": 100 }
+    },
+    {
+      "id": "play-video-001",
+      "type": "action.playVideo",
+      "label": "영상 재생",
+      "objectId": "video-overlay-plane",
+      "loop": false,
+      "position": { "x": 550, "y": 100 }
+    },
+    {
+      "id": "play-sound-001",
+      "type": "action.playSound",
+      "label": "사운드 재생",
+      "src": "assets/audio/ambient.mp3",
+      "loop": true,
+      "position": { "x": 800, "y": 100 }
+    },
+    {
+      "id": "target-lost-001",
+      "type": "event.targetLost",
+      "label": "타깃 사라짐",
+      "position": { "x": 50, "y": 300 }
+    },
+    {
+      "id": "hide-model-001",
+      "type": "action.hide",
+      "label": "3D 모델 숨기기",
+      "objectId": "glb-main-sculpture",
+      "position": { "x": 300, "y": 300 }
+    },
+    {
+      "id": "pause-video-001",
+      "type": "action.pauseVideo",
+      "label": "영상 일시정지",
+      "objectId": "video-overlay-plane",
+      "position": { "x": 550, "y": 300 }
+    },
+    {
+      "id": "pause-sound-001",
+      "type": "action.pauseSound",
+      "label": "사운드 정지",
+      "objectId": "play-sound-001",
+      "position": { "x": 800, "y": 300 }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-found-show",
+      "from": "target-found-001",
+      "to": "show-model-001"
+    },
+    {
+      "id": "edge-show-video",
+      "from": "show-model-001",
+      "to": "play-video-001"
+    },
+    {
+      "id": "edge-video-sound",
+      "from": "play-video-001",
+      "to": "play-sound-001"
+    },
+    {
+      "id": "edge-lost-hide",
+      "from": "target-lost-001",
+      "to": "hide-model-001"
+    },
+    {
+      "id": "edge-hide-pausevideo",
+      "from": "hide-model-001",
+      "to": "pause-video-001"
+    },
+    {
+      "id": "edge-pausevideo-pausesound",
+      "from": "pause-video-001",
+      "to": "pause-sound-001"
+    }
+  ]
+}
