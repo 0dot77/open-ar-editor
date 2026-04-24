@@ -1,0 +1,31 @@
+{
+  "version": "0.1.0",
+  "tracking": {
+    "type": "image",
+    "target": "assets/targets/target.mind",
+    "preview": "assets/targets/target-preview.jpg"
+  },
+  "scene": {
+    "background": "camera",
+    "units": "meters",
+    "objects": [
+      {
+        "id": "model-001",
+        "type": "model",
+        "src": "assets/models/object.glb",
+        "position": [0, 0, 0],
+        "rotation": [0, 0, 0],
+        "scale": [1, 1, 1],
+        "visible": true,
+        "events": [
+          {
+            "trigger": "tap",
+            "action": "playAnimation",
+            "target": "model-001",
+            "animation": "Take 001"
+          }
+        ]
+      }
+    ]
+  }
+}
