@@ -1,0 +1,365 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://open-ar-editor/schemas/project.webar.schema.json",
+  "title": "project.webar",
+  "description": "편집용 AR 프로젝트 원본 파일. 장면, 에셋 메타데이터, export 이력을 포함한다.",
+  "type": "object",
+  "required": ["schemaVersion", "metadata", "tracking", "scene", "assets"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "description": "스키마 버전 (semver). 런타임은 MAJOR 일치 & MINOR 이하만 로드한다.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "examples": ["0.1.0"]
+    },
+    "metadata": {
+      "type": "object",
+      "description": "작품 메타데이터",
+      "required": ["title", "artist", "createdAt", "updatedAt"],
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "작품 제목"
+        },
+        "artist": {
+          "type": "string",
+          "description": "작가 이름"
+        },
+        "description": {
+          "type": "string",
+          "description": "작품 설명"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "최초 생성 시각 (ISO 8601)"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "최종 수정 시각 (ISO 8601)"
+        },
+        "keywords": {
+          "type": "array",
+          "description": "검색/분류용 키워드",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "tracking": {
+      "description": "AR 트래킹 방식 설정. 1차 범위는 image 필수.",
+      "oneOf": [
+        {
+          "$ref": "#/definitions/trackingImage"
+        },
+        {
+          "$ref": "#/definitions/trackingFace"
+        },
+        {
+          "$ref": "#/definitions/trackingMarker"
+        },
+        {
+          "$ref": "#/definitions/trackingGPS"
+        }
+      ]
+    },
+    "scene": {
+      "type": "object",
+      "description": "AR 장면 구성",
+      "required": ["background", "units", "objects"],
+      "additionalProperties": false,
+      "properties": {
+        "background": {
+          "type": "string",
+          "enum": ["camera", "transparent", "color"],
+          "description": "배경 종류. camera = 카메라 피드, transparent = 투명, color = 단색"
+        },
+        "backgroundColor": {
+          "type": "string",
+          "description": "배경 색상 (background가 color일 때만 사용, hex)"
+        },
+        "units": {
+          "type": "string",
+          "enum": ["meters", "centimeters"],
+          "description": "장면 단위계"
+        },
+        "objects": {
+          "type": "array",
+          "description": "장면에 배치된 오브젝트 목록",
+          "items": {
+            "$ref": "#/definitions/sceneObject"
+          }
+        }
+      }
+    },
+    "assets": {
+      "type": "array",
+      "description": "프로젝트에서 사용하는 에셋 목록",
+      "items": {
+        "$ref": "#/definitions/asset"
+      }
+    },
+    "exports": {
+      "type": "array",
+      "description": "과거 export 기록 메타 (선택)",
+      "items": {
+        "$ref": "#/definitions/exportRecord"
+      }
+    }
+  },
+  "definitions": {
+    "trackingImage": {
+      "type": "object",
+      "required": ["type", "target"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "image"
+        },
+        "target": {
+          "type": "string",
+          "description": "MindAR .mind 파일 경로 (에셋 ID 또는 상대 경로)"
+        },
+        "preview": {
+          "type": "string",
+          "description": "타깃 미리보기 이미지 경로"
+        }
+      }
+    },
+    "trackingFace": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "face"
+        },
+        "maxFaces": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4,
+          "default": 1,
+          "description": "동시에 추적할 최대 얼굴 수"
+        }
+      }
+    },
+    "trackingMarker": {
+      "type": "object",
+      "required": ["type", "markerSrc"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "marker"
+        },
+        "markerSrc": {
+          "type": "string",
+          "description": "AR.js 마커 파일 경로"
+        }
+      }
+    },
+    "trackingGPS": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "gps"
+        },
+        "latitude": {
+          "type": "number",
+          "description": "중심 위도"
+        },
+        "longitude": {
+          "type": "number",
+          "description": "중심 경도"
+        },
+        "radius": {
+          "type": "number",
+          "description": "활성화 반경 (미터)"
+        }
+      }
+    },
+    "sceneObject": {
+      "type": "object",
+      "description": "장면 오브젝트 (model, image, video, audio, text, button)",
+      "required": ["id", "type", "src", "position", "rotation", "scale", "visible"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "오브젝트 고유 ID (kebab-case)",
+          "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["model", "image", "video", "audio", "text", "button"],
+          "description": "오브젝트 종류"
+        },
+        "label": {
+          "type": "string",
+          "description": "에디터에서 표시하는 작가 친화적 이름"
+        },
+        "src": {
+          "type": "string",
+          "description": "에셋 ID (assets[] 의 id 참조)"
+        },
+        "position": {
+          "$ref": "#/definitions/vector3"
+        },
+        "rotation": {
+          "$ref": "#/definitions/vector3"
+        },
+        "scale": {
+          "$ref": "#/definitions/vector3OrScalar"
+        },
+        "visible": {
+          "type": "boolean",
+          "description": "초기 표시 여부"
+        },
+        "anchorType": {
+          "type": "string",
+          "enum": ["target", "forehead", "leftEye", "rightEye", "mouth", "world"],
+          "description": "오브젝트가 붙는 기준점"
+        },
+        "animationName": {
+          "type": "string",
+          "description": "GLB 모델의 초기 재생 애니메이션 이름"
+        },
+        "autoplay": {
+          "type": "boolean",
+          "description": "타깃 인식 시 자동 재생 여부 (video/audio)"
+        },
+        "loop": {
+          "type": "boolean",
+          "description": "반복 재생 여부 (video/audio/animation)"
+        },
+        "content": {
+          "type": "string",
+          "description": "텍스트 오브젝트 내용"
+        },
+        "material": {
+          "$ref": "#/definitions/materialProps"
+        }
+      }
+    },
+    "vector3": {
+      "type": "array",
+      "description": "[x, y, z]",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "vector3OrScalar": {
+      "description": "균등 스케일(숫자) 또는 [x, y, z]",
+      "oneOf": [
+        {
+          "type": "number"
+        },
+        {
+          "$ref": "#/definitions/vector3"
+        }
+      ]
+    },
+    "materialProps": {
+      "type": "object",
+      "description": "재질 속성",
+      "additionalProperties": false,
+      "properties": {
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "color": {
+          "type": "string",
+          "description": "hex 색상"
+        },
+        "emissiveIntensity": {
+          "type": "number",
+          "minimum": 0
+        },
+        "roughness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "metalness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "asset": {
+      "type": "object",
+      "description": "에셋 메타데이터",
+      "required": ["id", "type", "path"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "에셋 고유 ID (kebab-case)",
+          "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["target", "model", "image", "video", "audio"],
+          "description": "에셋 종류"
+        },
+        "path": {
+          "type": "string",
+          "description": "프로젝트 폴더 내 최적화된 에셋 경로 (상대)"
+        },
+        "originalPath": {
+          "type": "string",
+          "description": "작가가 원본으로 import한 경로 (보존용)"
+        },
+        "size": {
+          "type": "integer",
+          "description": "파일 크기 (bytes)"
+        },
+        "hash": {
+          "type": "string",
+          "description": "SHA-256 체크섬 (보존 검증용)"
+        },
+        "mimeType": {
+          "type": "string",
+          "description": "MIME 타입"
+        }
+      }
+    },
+    "exportRecord": {
+      "type": "object",
+      "description": "export 기록",
+      "required": ["exportedAt", "outputPath"],
+      "additionalProperties": false,
+      "properties": {
+        "exportedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "outputPath": {
+          "type": "string",
+          "description": "export 결과물 폴더 경로"
+        },
+        "runtimeVersion": {
+          "type": "string",
+          "description": "export 시 사용한 런타임 버전"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

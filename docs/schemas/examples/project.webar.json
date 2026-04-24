@@ -1,0 +1,91 @@
+{
+  "schemaVersion": "0.1.0",
+  "metadata": {
+    "title": "포스터 기반 AR",
+    "artist": "홍길동",
+    "description": "전시 포스터를 인식하면 3D 오브젝트와 영상이 나타나는 작품",
+    "createdAt": "2026-04-24T12:00:00+09:00",
+    "updatedAt": "2026-04-25T10:30:00+09:00",
+    "keywords": ["포스터", "이미지타깃", "3D", "영상"]
+  },
+  "tracking": {
+    "type": "image",
+    "target": "assets/targets/poster-target.mind",
+    "preview": "assets/targets/poster-target-preview.jpg"
+  },
+  "scene": {
+    "background": "camera",
+    "units": "meters",
+    "objects": [
+      {
+        "id": "glb-main-sculpture",
+        "type": "model",
+        "label": "주 조각 오브젝트",
+        "src": "glb-sculpture-asset",
+        "position": [0, 0.2, 0],
+        "rotation": [0, 0, 0],
+        "scale": [0.3, 0.3, 0.3],
+        "visible": false,
+        "anchorType": "target",
+        "animationName": "Idle",
+        "loop": true,
+        "material": {
+          "emissiveIntensity": 0.5
+        }
+      },
+      {
+        "id": "video-overlay-plane",
+        "type": "video",
+        "label": "영상 화면",
+        "src": "video-promo-asset",
+        "position": [0, -0.1, 0.01],
+        "rotation": [0, 0, 0],
+        "scale": [0.4, 0.225, 1],
+        "visible": false,
+        "anchorType": "target",
+        "autoplay": false,
+        "loop": false,
+        "material": {
+          "opacity": 1.0
+        }
+      }
+    ]
+  },
+  "assets": [
+    {
+      "id": "poster-target-asset",
+      "type": "target",
+      "path": "assets/targets/poster-target.mind",
+      "originalPath": "/Users/hongildong/Desktop/poster.jpg",
+      "size": 204800,
+      "hash": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+      "mimeType": "application/octet-stream"
+    },
+    {
+      "id": "glb-sculpture-asset",
+      "type": "model",
+      "path": "assets/models/sculpture.glb",
+      "originalPath": "/Users/hongildong/Desktop/sculpture.glb",
+      "size": 1048576,
+      "hash": "b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3",
+      "mimeType": "model/gltf-binary"
+    },
+    {
+      "id": "video-promo-asset",
+      "type": "video",
+      "path": "assets/videos/promo.mp4",
+      "originalPath": "/Users/hongildong/Desktop/promo.mp4",
+      "size": 5242880,
+      "hash": "c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4",
+      "mimeType": "video/mp4"
+    }
+  ],
+  "exports": [
+    {
+      "exportedAt": "2026-04-25T10:30:00+09:00",
+      "outputPath": "exports/2026-04-25-web",
+      "runtimeVersion": "0.1.0",
+      "note": "초기 전시 배포"
+    }
+  ]
+}
