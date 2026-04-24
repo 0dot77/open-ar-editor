@@ -1,0 +1,28 @@
+.asset-panel {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+.asset-panel__placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.asset-panel__placeholder p {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.asset-panel__placeholder span {
+  font-size: 11px;
+  line-height: 1.5;
+}

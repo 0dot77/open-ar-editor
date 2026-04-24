@@ -1,0 +1,112 @@
+/* open-ar-editor 전역 스타일 및 레이아웃 그리드 */
+
+/* === 전역 리셋 === */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* === 어두운 테마 기본값 === */
+:root {
+  --color-bg: #1e1e1e;
+  --color-panel: #2a2a2a;
+  --color-panel-border: #3a3a3a;
+  --color-text: #e8e8e8;
+  --color-text-muted: #888888;
+  --color-accent: #5b8dee;
+  --color-accent-hover: #7aa3f5;
+  --color-btn: #3a3a3a;
+  --color-btn-hover: #4a4a4a;
+
+  --top-bar-height: 48px;
+  --left-panel-width: 240px;
+  --right-panel-width: 280px;
+  --bottom-tabs-height: 220px;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+}
+
+/* === 앱 루트 레이아웃 (CSS Grid) === */
+/*
+  레이아웃:
+  ┌─────────────────────────────────────────────┐
+  │               상단 바 (top-bar)              │
+  ├──────┬────────────────────────┬─────────────┤
+  │ 왼쪽 │     3D 뷰포트 / 타깃     │  선택 속성   │
+  │ 패널 │                        │             │
+  ├──────┴────────────────────────┴─────────────┤
+  │          하단 탭 (인터랙션 / 값 연결 / 로그)   │
+  └─────────────────────────────────────────────┘
+*/
+.app-layout {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  grid-template-areas:
+    "top-bar   top-bar   top-bar"
+    "left-panel viewport  inspector"
+    "bottom    bottom    bottom";
+  grid-template-columns: var(--left-panel-width) 1fr var(--right-panel-width);
+  grid-template-rows: var(--top-bar-height) 1fr var(--bottom-tabs-height);
+}
+
+/* === 영역별 grid-area 지정 === */
+.area-top-bar {
+  grid-area: top-bar;
+  background-color: var(--color-panel);
+  border-bottom: 1px solid var(--color-panel-border);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 8px;
+}
+
+.area-left-panel {
+  grid-area: left-panel;
+  background-color: var(--color-panel);
+  border-right: 1px solid var(--color-panel-border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.area-viewport {
+  grid-area: viewport;
+  background-color: var(--color-bg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.area-inspector {
+  grid-area: inspector;
+  background-color: var(--color-panel);
+  border-left: 1px solid var(--color-panel-border);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.area-bottom {
+  grid-area: bottom;
+  background-color: var(--color-panel);
+  border-top: 1px solid var(--color-panel-border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
