@@ -197,17 +197,17 @@ export interface Graph {
   edges: GraphEdge[];
 }
 
-/** 에디터 캔버스 상의 노드 좌표 */
-export interface NodePosition {
+/** 에디터 캔버스 상의 노드 좌표 (React Flow 레이아웃 전용) */
+export interface NodeGraphPosition {
   x: number;
   y: number;
 }
 
-/** 노드 공통 베이스 */
+/** 노드 공통 베이스. graphPosition 은 캔버스 레이아웃, 액션별 position(3D) 과 충돌 피함. */
 export interface NodeBase {
   id: string;
   label?: string;
-  position?: NodePosition;
+  graphPosition?: NodeGraphPosition;
 }
 
 // --- 입력 노드 ---
