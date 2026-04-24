@@ -1,0 +1,4 @@
+# 아이콘 파일은 나중에 생성합니다.
+# 아이콘을 생성하려면 다음 명령을 실행하세요:
+#   cargo tauri icon <이미지-경로>
+# 예: cargo tauri icon src-tauri/icons/app-icon.png

@@ -1,0 +1,44 @@
+.top-bar__project-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  padding: 0 4px;
+}
+
+.top-bar__spacer {
+  flex: 1;
+}
+
+.top-bar__btn {
+  padding: 6px 14px;
+  border: 1px solid var(--color-panel-border);
+  border-radius: 4px;
+  background-color: var(--color-btn);
+  color: var(--color-text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.top-bar__btn:hover {
+  background-color: var(--color-btn-hover);
+}
+
+.top-bar__btn--accent {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.top-bar__btn--accent:hover {
+  background-color: rgba(91, 141, 238, 0.12);
+}
+
+.top-bar__btn--primary {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #ffffff;
+}
+
+.top-bar__btn--primary:hover {
+  background-color: var(--color-accent-hover);
+}
