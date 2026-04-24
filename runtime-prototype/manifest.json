@@ -1,0 +1,10 @@
+{
+  "runtimeVersion": "0.1.0",
+  "schemaVersion": "0.1.0",
+  "libraries": {
+    "mindar": "1.2.5",
+    "three": "0.160.0"
+  },
+  "created": "2026-04-25",
+  "description": "open-ar-editor Phase 1 최소 런타임 — MindAR 이미지 타깃 기반"
+}

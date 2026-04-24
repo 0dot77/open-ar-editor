@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>WebAR 런타임</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #000;
+      overflow: hidden;
+      width: 100vw;
+      height: 100dvh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    #ar-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    /* iOS autoplay gate — shown before user interaction */
+    #start-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.88);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+    }
+
+    #start-overlay.hidden { display: none; }
+
+    #start-overlay h1 {
+      color: #fff;
+      font-size: 1.4rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    #start-overlay p {
+      color: rgba(255,255,255,0.6);
+      font-size: 0.875rem;
+      text-align: center;
+      max-width: 280px;
+    }
+
+    #btn-start {
+      padding: 16px 48px;
+      border: none;
+      border-radius: 999px;
+      background: #fff;
+      color: #000;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #btn-start:active { opacity: 0.8; }
+
+    /* Loading state */
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      color: #fff;
+    }
+
+    #loading-overlay.hidden { display: none; }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255,255,255,0.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #loading-text { font-size: 0.9rem; }
+
+    /* Error banner */
+    #ar-error {
+      display: none;
+      position: fixed;
+      bottom: 32px;
+      left: 16px;
+      right: 16px;
+      z-index: 200;
+      background: rgba(220, 38, 38, 0.9);
+      color: #fff;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    /* Scanning hint */
+    #scan-hint {
+      display: none;
+      position: fixed;
+      top: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 50;
+      background: rgba(0,0,0,0.5);
+      color: rgba(255,255,255,0.85);
+      padding: 8px 20px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    #scan-hint.visible { display: block; }
+  </style>
+</head>
+<body>
+
+  <!-- AR viewport — MindAR renders a canvas here -->
+  <div id="ar-container"></div>
+
+  <!-- Error banner (filled by runtime) -->
+  <div id="ar-error"></div>
+
+  <!-- Scanning hint -->
+  <div id="scan-hint">타깃 이미지를 카메라로 비춰 주세요</div>
+
+  <!-- Loading overlay -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div id="loading-text">불러오는 중…</div>
+  </div>
+
+  <!-- Start overlay: shown first to satisfy iOS autoplay policy -->
+  <div id="start-overlay">
+    <h1>WebAR 작품 보기</h1>
+    <p>카메라와 오디오를 사용합니다.<br>아래 버튼을 눌러 시작하세요.</p>
+    <button id="btn-start">시작하기</button>
+  </div>
+
+  <script type="module">
+    import { ARSceneLoader } from './runtime/ar-scene-loader.js';
+    import { bus } from './runtime/event-bus.js';
+
+    const startOverlay  = document.getElementById('start-overlay');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const loadingText   = document.getElementById('loading-text');
+    const scanHint      = document.getElementById('scan-hint');
+    const errorBanner   = document.getElementById('ar-error');
+
+    const loader = new ARSceneLoader({
+      container:  document.getElementById('ar-container'),
+      configPath: 'config.json',
+    });
+
+    bus.on('targetFound', () => scanHint.classList.remove('visible'));
+    bus.on('targetLost',  () => scanHint.classList.add('visible'));
+
+    document.getElementById('btn-start').addEventListener('click', async () => {
+      startOverlay.classList.add('hidden');
+      loadingOverlay.classList.remove('hidden');
+      loadingText.textContent = '카메라 초기화 중…';
+
+      try {
+        // Resume any AudioContext created before user gesture
+        loader.resumeAudio?.();
+
+        await loader.load();
+
+        loadingOverlay.classList.add('hidden');
+        scanHint.classList.add('visible');
+      } catch (err) {
+        loadingOverlay.classList.add('hidden');
+        // ar-scene-loader already fills #ar-error for known errors;
+        // show a fallback for unexpected ones
+        if (errorBanner.style.display === 'none' || !errorBanner.textContent) {
+          errorBanner.textContent = `오류가 발생했습니다: ${err.message}`;
+          errorBanner.style.display = 'block';
+        }
+      }
+    });
+  </script>
+</body>
+</html>
