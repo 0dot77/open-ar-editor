@@ -97,7 +97,15 @@ open-ar-editor/
 | 7 | 3-5주 | MindAR Face Tracking + foreheadAnchor |
 | 8 | 3-5주 | AR.js 마커/GPS |
 
-**현재 단계**: MVP 1 시작 — 먼저 `runtime-prototype/` 에서 MindAR 이미지 타깃 런타임을 모바일 브라우저에서 검증한 후, Tauri 앱 껍데기로 넘어간다.
+**현재 단계**: MVP 1 완료 (runtime-prototype/ + Tauri 껍데기 + JSON 스키마 5종). MVP 2 Wave 1 진행 중 — foundation (src/shared, src/state, src/tauri/api, src/services/exportPlan) + Tauri 백엔드 커맨드. 실제 빌드 검증은 사용자가 `pnpm install && pnpm tauri dev` 로.
+
+## 스키마 확정 사항 (v0.1.0)
+
+세 가지 설계 결정이 v0.1.0 에 반영됨:
+
+1. **scale 경로 이중성**: `objects.{id}.scale` = uniform scale (Three.js `setScalar`), `objects.{id}.scale.{x|y|z}` = 축별. `position` / `rotation` 은 축별만 허용 (uniform 의미 없음).
+2. **audio.spectrum 인덱스**: dot-case `audio.spectrum.N` (0-indexed). 스펙 문서의 `audio.spectrum[0..n]` 은 서술 표현, 실제 식별자는 dot-case 통일.
+3. **playSound / playVideo 소스**: `oneOf(objectId, src)` — 정확히 하나만. `objectId` 는 장면 내 오브젝트 참조 (재사용), `src` 는 일회성 경로 직접 재생.
 
 ## 1차 범위에서 제외
 
