@@ -1,4 +1,6 @@
 import { useState } from "react";
+import AssetPanel from "@/editor/asset-panel/AssetPanel";
+import ObjectList from "@/editor/object-list/ObjectList";
 import "./LeftPanel.css";
 
 type Tab = "template" | "asset" | "scene";
@@ -12,11 +14,13 @@ const TABS: { id: Tab; label: string }[] = [
 /**
  * LeftPanel — 왼쪽 패널
  *
- * 탭: 템플릿 / 에셋 / 장면 목록 (모두 placeholder)
- * MVP 2~3 에서 실제 내용 구현 예정.
+ * 탭:
+ *  - 템플릿: MVP 6 예정 안내
+ *  - 에셋: AssetPanel (에셋 추가 / 장면에 올리기)
+ *  - 장면 목록: ObjectList (오브젝트 선택 / 가시성 토글)
  */
 function LeftPanel() {
-  const [activeTab, setActiveTab] = useState<Tab>("template");
+  const [activeTab, setActiveTab] = useState<Tab>("asset");
 
   return (
     <div className="left-panel">
@@ -38,21 +42,11 @@ function LeftPanel() {
         {activeTab === "template" && (
           <div className="left-panel__placeholder">
             <p>템플릿</p>
-            <span>MVP 6 에서 작가용 템플릿 라이브러리 구현 예정</span>
+            <span>MVP 6 에서 작가용 템플릿 라이브러리 제공 예정</span>
           </div>
         )}
-        {activeTab === "asset" && (
-          <div className="left-panel__placeholder">
-            <p>에셋</p>
-            <span>MVP 2 에서 이미지·GLB·영상·사운드 패널 구현 예정</span>
-          </div>
-        )}
-        {activeTab === "scene" && (
-          <div className="left-panel__placeholder">
-            <p>장면 목록</p>
-            <span>MVP 2 에서 장면 관리 구현 예정</span>
-          </div>
-        )}
+        {activeTab === "asset" && <AssetPanel />}
+        {activeTab === "scene" && <ObjectList />}
       </div>
     </div>
   );

@@ -19,7 +19,10 @@
 .inspector__body {
   flex: 1;
   overflow-y: auto;
-  padding: 12px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .inspector__placeholder {
@@ -37,10 +40,130 @@
   font-size: 13px;
   color: var(--color-text);
   line-height: 1.5;
+  margin: 0;
 }
 
 .inspector__placeholder span {
   font-size: 11px;
   line-height: 1.5;
   margin-top: 8px;
+}
+
+/* 섹션 */
+.inspector__section {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-panel-border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inspector__section:last-child {
+  border-bottom: none;
+}
+
+.inspector__section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+/* 정보 행 */
+.inspector__info-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inspector__info-label {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  min-width: 40px;
+  flex-shrink: 0;
+}
+
+.inspector__info-value {
+  font-size: 12px;
+  color: var(--color-text);
+  font-family: monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 체크박스 행 */
+.inspector__checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.inspector__checkbox {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.inspector__checkbox-label {
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+.inspector__uniform-scale {
+  margin-bottom: 4px;
+}
+
+/* 벡터3 그리드 */
+.inspector__vec3 {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* 숫자 필드 */
+.inspector__field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inspector__field-label {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  min-width: 68px;
+  flex-shrink: 0;
+}
+
+.inspector__number-input {
+  flex: 1;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--color-panel-border);
+  border-radius: 3px;
+  background-color: var(--color-input-bg, rgba(255, 255, 255, 0.05));
+  color: var(--color-text);
+  font-size: 12px;
+  font-family: monospace;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.inspector__number-input:focus {
+  border-color: var(--color-accent);
+}
+
+/* 스피너 숨김 (선택) */
+.inspector__number-input::-webkit-outer-spin-button,
+.inspector__number-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.inspector__number-input[type="number"] {
+  -moz-appearance: textfield;
 }

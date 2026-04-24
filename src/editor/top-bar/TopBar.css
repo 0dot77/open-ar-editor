@@ -3,6 +3,15 @@
   font-weight: 600;
   color: var(--color-text);
   padding: 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.top-bar__dirty-dot {
+  color: var(--color-accent);
+  font-size: 18px;
+  line-height: 1;
 }
 
 .top-bar__spacer {
