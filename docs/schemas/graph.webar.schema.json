@@ -229,6 +229,7 @@
       ]
     },
     "nodeActionPlaySound": {
+      "description": "action.playSound — objectId(장면 오브젝트 참조) 또는 src(일회성 경로) 중 정확히 하나만 허용.",
       "allOf": [
         { "$ref": "#/definitions/nodeBase" },
         {
@@ -237,10 +238,26 @@
           "additionalProperties": true,
           "properties": {
             "type": { "type": "string", "const": "action.playSound" },
-            "objectId": { "type": "string" },
-            "src": { "type": "string" },
             "loop": { "type": "boolean" }
-          }
+          },
+          "oneOf": [
+            {
+              "required": ["objectId"],
+              "not": { "required": ["src"] },
+              "properties": {
+                "objectId": { "type": "string", "description": "장면 오브젝트 ID — 해당 오브젝트에 바인딩된 오디오를 재생" },
+                "src": false
+              }
+            },
+            {
+              "required": ["src"],
+              "not": { "required": ["objectId"] },
+              "properties": {
+                "src": { "type": "string", "description": "오디오 파일 경로 — ephemeral HTMLAudioElement 를 생성해 재생" },
+                "objectId": false
+              }
+            }
+          ]
         }
       ]
     },
@@ -259,6 +276,7 @@
       ]
     },
     "nodeActionPlayVideo": {
+      "description": "action.playVideo — objectId(장면 오브젝트 참조) 또는 src(일회성 경로) 중 정확히 하나만 허용.",
       "allOf": [
         { "$ref": "#/definitions/nodeBase" },
         {
@@ -267,10 +285,26 @@
           "additionalProperties": true,
           "properties": {
             "type": { "type": "string", "const": "action.playVideo" },
-            "objectId": { "type": "string" },
-            "src": { "type": "string" },
             "loop": { "type": "boolean" }
-          }
+          },
+          "oneOf": [
+            {
+              "required": ["objectId"],
+              "not": { "required": ["src"] },
+              "properties": {
+                "objectId": { "type": "string", "description": "장면 오브젝트 ID — 해당 오브젝트에 바인딩된 영상을 재생" },
+                "src": false
+              }
+            },
+            {
+              "required": ["src"],
+              "not": { "required": ["objectId"] },
+              "properties": {
+                "src": { "type": "string", "description": "영상 파일 경로 — ephemeral HTMLVideoElement 를 생성해 재생" },
+                "objectId": false
+              }
+            }
+          ]
         }
       ]
     },

@@ -58,13 +58,13 @@
       ]
     },
     "signalSourceWithSpectrum": {
-      "description": "audio.spectrum[n] 동적 채널을 포함한 signal source. 정적 enum 또는 audio.spectrum[숫자] 패턴.",
+      "description": "audio.spectrum.N dot-case 동적 채널을 포함한 signal source. 정적 enum 또는 audio.spectrum.{N} 패턴 (0-indexed, dot-case 통일).",
       "oneOf": [
         { "$ref": "#/definitions/signalSource" },
         {
           "type": "string",
-          "pattern": "^audio\\.spectrum\\[\\d+\\]$",
-          "description": "FFT 주파수 빈 채널 (예: audio.spectrum[0])"
+          "pattern": "^audio\\.spectrum\\.\\d+$",
+          "description": "FFT 주파수 빈 채널 (예: audio.spectrum.0, audio.spectrum.31)"
         }
       ]
     },
@@ -121,11 +121,32 @@
           "$ref": "#/definitions/signalSourceWithSpectrum"
         },
         "target": {
-          "type": "string",
-          "description": "오브젝트 속성 경로 (dot-case). 패턴: objects.{objectId}.{property} 또는 objects.{objectId}.{group}.{property}",
-          "pattern": "^objects\\.[a-z0-9][a-z0-9-]*[a-z0-9]\\..+$",
+          "description": "오브젝트 속성 경로 (dot-case). scale 은 uniform(objects.id.scale) 또는 축별(objects.id.scale.{x|y|z}) 허용. position/rotation 은 축별만 허용.",
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^objects\\.[a-z0-9][a-z0-9-]*[a-z0-9]\\.scale$",
+              "description": "uniform scale (Three.js setScalar 적용). 예: objects.forehead-crown.scale"
+            },
+            {
+              "type": "string",
+              "pattern": "^objects\\.[a-z0-9][a-z0-9-]*[a-z0-9]\\.scale\\.[xyz]$",
+              "description": "축별 scale. 예: objects.forehead-crown.scale.x"
+            },
+            {
+              "type": "string",
+              "pattern": "^objects\\.[a-z0-9][a-z0-9-]*[a-z0-9]\\.(position|rotation)\\.[xyz]$",
+              "description": "position/rotation 축별 경로 (uniform 없음). 예: objects.foo.position.x"
+            },
+            {
+              "type": "string",
+              "pattern": "^objects\\.[a-z0-9][a-z0-9-]*[a-z0-9]\\.(material|animation|particle|video|audio)\\..+$",
+              "description": "그룹 속성 경로. 예: objects.forehead-crown.material.emissiveIntensity"
+            }
+          ],
           "examples": [
             "objects.forehead-crown.scale",
+            "objects.forehead-crown.scale.x",
             "objects.forehead-crown.position.x",
             "objects.forehead-crown.rotation.y",
             "objects.forehead-crown.material.opacity",

@@ -99,6 +99,49 @@ docs/schemas/archive/
 | signal source | dot-case namespace | `audio.low`, `face.yaw`, `time.sin` |
 | signal target | dot-case path | `objects.forehead-crown.material.emissiveIntensity` |
 
+### Signal Target 경로 규칙 (v0.1.0 확정)
+
+`scale` 은 두 가지 형태를 허용한다:
+- `objects.{id}.scale` — uniform scale (Three.js `object3D.scale.setScalar(v)` 적용)
+- `objects.{id}.scale.{x|y|z}` — 축별 scale
+
+`position`, `rotation` 은 축별 경로만 허용한다 (uniform 의미 없음):
+- `objects.{id}.position.{x|y|z}`
+- `objects.{id}.rotation.{x|y|z}`
+
+uniform scale 지정 경로 (`objects.id.scale`) 에 단일 숫자 값이 들어오면 런타임은 `setScalar(v)` 를 호출한다.
+
+### Signal Source 목록 (v0.1.0 확정)
+
+**정적 채널** (enum):
+
+| 채널 | 설명 |
+|---|---|
+| `audio.volume` | 전체 볼륨 (0~1) |
+| `audio.low` | 저음 에너지 |
+| `audio.mid` | 중음 에너지 |
+| `audio.high` | 고음 에너지 |
+| `audio.peak` | 피크 값 |
+| `audio.beat` | 비트 감지 (0/1) |
+| `face.x/y/z` | 얼굴 위치 |
+| `face.pitch/yaw/roll` | 얼굴 회전 |
+| `face.mouthOpen` | 입 열림 (0~1) |
+| `face.leftEye/rightEye` | 눈 열림 (0~1) |
+| `face.foreheadAnchor` | 이마 앵커 |
+| `time.seconds/delta/sin/cos/loop` | 시간 채널 |
+| `random.value/noise/pulse` | 랜덤/노이즈 |
+| `target.visible/confidence/x/y/rotation` | 타깃 상태 |
+
+**동적 채널** (패턴 `^audio\.spectrum\.\d+$`):
+
+`audio.spectrum.{N}` — FFT 스펙트럼 빈, 0-indexed, dot-case 통일.
+
+예: `audio.spectrum.0`, `audio.spectrum.1`, ..., `audio.spectrum.31`
+
+- bin 개수 기본값: **32** (spectrumBins = 32)
+- manifest 또는 `config.audio.spectrumBins` 로 override 가능
+- 스펙 문서의 `audio.spectrum[0..n]` 서술 표현은 설명 목적이며, 실제 식별자는 dot-case (`audio.spectrum.0`) 를 사용한다
+
 ---
 
 ## 파일 간 참조 원칙
@@ -130,16 +173,31 @@ objects.{objectId}.{group}.{property}
 
 | path | 설명 |
 |---|---|
-| `objects.forehead-crown.scale` | 균등 크기 (단일 숫자) |
-| `objects.forehead-crown.position.x` | X 위치 |
-| `objects.forehead-crown.rotation.y` | Y 회전 |
+| `objects.forehead-crown.scale` | uniform 크기 (setScalar) — v0.1.0 확정 |
+| `objects.forehead-crown.scale.x` | X축 크기 — v0.1.0 확정 |
+| `objects.forehead-crown.position.x` | X 위치 (축별만 허용) |
+| `objects.forehead-crown.rotation.y` | Y 회전 (축별만 허용) |
 | `objects.forehead-crown.material.opacity` | 투명도 |
 | `objects.forehead-crown.material.emissiveIntensity` | 빛 세기 |
 | `objects.forehead-crown.animation.speed` | 애니메이션 속도 |
 | `objects.forehead-particles.particle.rate` | 파티클 발생 속도 |
 | `objects.overlay-video.video.playbackRate` | 영상 재생 속도 |
 
-> **미결 결정사항**: `scale` 은 단일 숫자(`objects.id.scale`)와 축별(`objects.id.scale.x`) 두 형태를 허용한다. 런타임이 경로 길이로 구분해 처리해야 한다.
+**v0.1.0 확정**: `scale` 은 uniform(`objects.id.scale`) 과 축별(`objects.id.scale.{x|y|z}`) 모두 허용. `position`, `rotation` 은 축별(`objects.id.position.{x|y|z}`) 만 허용.
+
+---
+
+## action.playSound / action.playVideo 소스 규칙 (v0.1.0 확정)
+
+`action.playSound`, `action.playVideo` 노드는 `objectId` 와 `src` 중 **정확히 하나만** 가질 수 있다.
+
+| 필드 | 런타임 동작 |
+|---|---|
+| `objectId` | 장면 오브젝트를 참조해 해당 오브젝트에 바인딩된 미디어 엘리먼트를 재생. 장면 상태와 연동. |
+| `src` | 경로를 직접 지정해 ephemeral `HTMLAudioElement` / `HTMLVideoElement` 를 생성 후 재생. 장면 오브젝트와 무관. |
+
+우선순위는 없다. `objectId` 가 있으면 장면 오브젝트 경로, `src` 가 있으면 일회성 재생.
+두 필드를 동시에 지정하면 스키마 검증 오류다.
 
 ---
 
@@ -150,6 +208,7 @@ objects.{objectId}.{group}.{property}
 3. **런타임 포함 export**: CDN 없이도 실행 가능한 export 옵션 제공.
 4. **라이브러리 버전 기록**: `manifest.json` 에 MindAR, Three.js 버전 필수 기재.
 5. **에디터가 사라져도**: `index.html` + `config.json` + `assets/` + `runtime/` 만으로 복원 가능.
+6. **v0.1.0 릴리스는 최초 사용자 export 발생 이후 archive/v0.1.0/ 스냅샷 확정**.
 
 ---
 

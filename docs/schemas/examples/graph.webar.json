@@ -17,18 +17,34 @@
     {
       "id": "play-video-001",
       "type": "action.playVideo",
-      "label": "영상 재생",
+      "label": "영상 재생 (오브젝트 참조)",
       "objectId": "video-overlay-plane",
       "loop": false,
       "position": { "x": 550, "y": 100 }
     },
     {
+      "id": "play-video-src-001",
+      "type": "action.playVideo",
+      "label": "영상 재생 (경로 직접 지정)",
+      "src": "assets/videos/intro.mp4",
+      "loop": false,
+      "position": { "x": 550, "y": 200 }
+    },
+    {
       "id": "play-sound-001",
       "type": "action.playSound",
-      "label": "사운드 재생",
+      "label": "사운드 재생 (경로 직접 지정)",
       "src": "assets/audio/ambient.mp3",
       "loop": true,
       "position": { "x": 800, "y": 100 }
+    },
+    {
+      "id": "play-sound-obj-001",
+      "type": "action.playSound",
+      "label": "사운드 재생 (오브젝트 참조)",
+      "objectId": "audio-bgm-object",
+      "loop": false,
+      "position": { "x": 800, "y": 200 }
     },
     {
       "id": "target-lost-001",

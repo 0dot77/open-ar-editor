@@ -1,12 +1,9 @@
 /**
- * open-ar-editor 공유 타입 정의
- * 이 파일은 나중에 src/shared/ 로 복사될 예정입니다.
- * 모든 타입은 docs/schemas/*.schema.json 과 1:1 대응합니다.
+ * 이 파일은 docs/schemas/types.ts 의 동기화 사본.
+ * 변경 시 양쪽 맞추기.
  *
- * 네이밍 규칙:
- *  - 노드/오브젝트 ID: kebab-case 문자열
- *  - namespace: dot-case (예: audio.low, event.targetFound)
- *  - target path: dot-case (예: objects.forehead-crown.scale)
+ * open-ar-editor 공유 타입 정의 — 에디터 프론트엔드 전역 사용.
+ * 모든 타입은 docs/schemas/*.schema.json 과 1:1 대응한다.
  */
 
 // ============================================================
@@ -263,7 +260,12 @@ export interface NodeActionToggle extends NodeBase {
   objectId: string;
 }
 
-/** action.playSound — objectId(장면 오브젝트 바인딩) variant */
+/**
+ * action.playSound — objectId XOR src (v0.1.0 확정)
+ *
+ * objectId: 장면 오브젝트에 바인딩된 오디오 재생 (장면 상태 연동)
+ * src:      ephemeral HTMLAudioElement 생성 후 일회성 재생
+ */
 export interface NodeActionPlaySoundByObjectId extends NodeBase {
   type: "action.playSound";
   objectId: string;
@@ -271,7 +273,6 @@ export interface NodeActionPlaySoundByObjectId extends NodeBase {
   loop?: boolean;
 }
 
-/** action.playSound — src(일회성 경로) variant */
 export interface NodeActionPlaySoundBySrc extends NodeBase {
   type: "action.playSound";
   src: string;
@@ -279,7 +280,6 @@ export interface NodeActionPlaySoundBySrc extends NodeBase {
   loop?: boolean;
 }
 
-/** action.playSound discriminated union (objectId XOR src) */
 export type NodeActionPlaySound = NodeActionPlaySoundByObjectId | NodeActionPlaySoundBySrc;
 
 export interface NodeActionPauseSound extends NodeBase {
@@ -287,7 +287,12 @@ export interface NodeActionPauseSound extends NodeBase {
   objectId: string;
 }
 
-/** action.playVideo — objectId(장면 오브젝트 바인딩) variant */
+/**
+ * action.playVideo — objectId XOR src (v0.1.0 확정)
+ *
+ * objectId: 장면 오브젝트에 바인딩된 영상 재생 (장면 상태 연동)
+ * src:      ephemeral HTMLVideoElement 생성 후 일회성 재생
+ */
 export interface NodeActionPlayVideoByObjectId extends NodeBase {
   type: "action.playVideo";
   objectId: string;
@@ -295,7 +300,6 @@ export interface NodeActionPlayVideoByObjectId extends NodeBase {
   loop?: boolean;
 }
 
-/** action.playVideo — src(일회성 경로) variant */
 export interface NodeActionPlayVideoBySrc extends NodeBase {
   type: "action.playVideo";
   src: string;
@@ -303,7 +307,6 @@ export interface NodeActionPlayVideoBySrc extends NodeBase {
   loop?: boolean;
 }
 
-/** action.playVideo discriminated union (objectId XOR src) */
 export type NodeActionPlayVideo = NodeActionPlayVideoByObjectId | NodeActionPlayVideoBySrc;
 
 export interface NodeActionPauseVideo extends NodeBase {
@@ -437,7 +440,6 @@ export interface Bindings {
 
 /**
  * 정적 Signal Source 채널 식별자 (dot-case namespace).
- * audio.spectrum[n] 은 SignalSourceWithSpectrum 으로 처리.
  */
 export type SignalSource =
   | "audio.volume"
@@ -472,8 +474,8 @@ export type SignalSource =
 
 /**
  * audio.spectrum.N dot-case 패턴을 포함한 Signal Source (v0.1.0 확정).
- * dot-case 통일 — 실제 식별자는 audio.spectrum.0, audio.spectrum.1, ...
- * 스펙 문서의 audio.spectrum[0..n] 서술 표현과 구별됨.
+ * 실제 식별자: audio.spectrum.0, audio.spectrum.1, ..., audio.spectrum.{spectrumBins-1}
+ * 기본 bins: 32. config.audio.spectrumBins 로 override 가능.
  */
 export type SignalSourceWithSpectrum = SignalSource | `audio.spectrum.${number}`;
 
@@ -508,6 +510,9 @@ export interface SignalMapConfig {
   /** 출력 값 반전 여부 */
   invert?: boolean;
 }
+
+/** Signal Map — 타입 별칭 (signalPath.ts 등에서 사용) */
+export type SignalMap = SignalMapConfig;
 
 /** 단일 Signal Binding */
 export interface SignalBinding {
