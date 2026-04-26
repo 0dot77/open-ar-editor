@@ -25,6 +25,8 @@ pub fn run() {
             commands::graph::graph_load,
             commands::graph::graph_save,
             commands::assets::asset_import,
+            commands::file::file_read,
+            commands::file::file_write,
             commands::preview::preview_start,
             commands::preview::preview_build_and_start,
             commands::preview::preview_stop,

@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import NodeGraph from "@/editor/node-graph/NodeGraph";
 import "./BottomTabs.css";
 
-type Tab = "interaction" | "signal-binding" | "mobile-log";
+const CodeTab = lazy(() => import("@/editor/code-tab/CodeTab"));
+
+type Tab = "interaction" | "code" | "signal-binding" | "mobile-log";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "interaction", label: "Interaction" },
+  { id: "code", label: "Code" },
   { id: "signal-binding", label: "Signal Binding" },
   { id: "mobile-log", label: "Mobile Log" },
 ];
@@ -29,6 +32,18 @@ function BottomTabs() {
 
       <div className="bottom-tabs__content">
         {activeTab === "interaction" && <NodeGraph />}
+
+        {activeTab === "code" && (
+          <Suspense
+            fallback={
+              <div className="bottom-tabs__placeholder">
+                <p>Loading editor…</p>
+              </div>
+            }
+          >
+            <CodeTab />
+          </Suspense>
+        )}
 
         {activeTab === "signal-binding" && (
           <div className="bottom-tabs__placeholder">

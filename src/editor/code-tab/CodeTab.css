@@ -1,0 +1,118 @@
+.code-tab {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100%;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  overflow: hidden;
+}
+
+.code-tab--empty {
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.code-tab__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 8px;
+  background-color: var(--color-panel);
+  border-bottom: 1px solid var(--color-panel-border);
+  flex-shrink: 0;
+  min-height: 32px;
+}
+
+.code-tab__file-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.code-tab__file-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background-color: transparent;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.code-tab__file-tab:hover {
+  background-color: var(--color-btn);
+  color: var(--color-text);
+}
+
+.code-tab__file-tab--active {
+  background-color: var(--color-btn);
+  color: var(--color-text);
+  border-color: var(--color-panel-border);
+}
+
+.code-tab__dirty {
+  color: var(--color-accent);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.code-tab__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.code-tab__btn {
+  height: 24px;
+  padding: 0 10px;
+  border: 1px solid var(--color-panel-border);
+  border-radius: 3px;
+  background-color: var(--color-btn);
+  color: var(--color-text);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background-color 0.15s, opacity 0.15s;
+}
+
+.code-tab__btn:hover:not(:disabled) {
+  background-color: var(--color-btn-hover);
+}
+
+.code-tab__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.code-tab__warning {
+  padding: 6px 12px;
+  background-color: rgba(217, 160, 95, 0.1);
+  border-left: 3px solid #d9a05f;
+  color: var(--color-text);
+  font-size: 11px;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+
+.code-tab__error {
+  padding: 6px 12px;
+  background-color: rgba(220, 80, 80, 0.12);
+  border-left: 3px solid #dc5050;
+  color: var(--color-text);
+  font-size: 11px;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+
+.code-tab__editor {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}

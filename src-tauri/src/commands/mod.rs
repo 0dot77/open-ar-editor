@@ -2,6 +2,7 @@
 
 pub mod assets;
 pub mod export;
+pub mod file;
 pub mod graph;
 pub mod preview;
 pub mod project;

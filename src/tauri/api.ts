@@ -193,6 +193,27 @@ export const qrApi = {
 };
 
 // ============================================================
+// fileApi — 프로젝트 폴더 내 화이트리스트 파일 읽기/쓰기
+// ============================================================
+
+/**
+ * 프로젝트 폴더의 화이트리스트 파일을 직접 읽고 쓰기 위한 래퍼.
+ *
+ * Rust 커맨드:
+ *   file_read(project_path: String, relative_path: String) -> String
+ *   file_write(project_path: String, relative_path: String, content: String) -> ()
+ *
+ * 화이트리스트 (Rust 측 LOCKED): relativePath 는 "index.html" | "custom.js" 만 허용된다.
+ */
+export const fileApi = {
+  read: (projectPath: string, relativePath: string) =>
+    invoke<string>("file_read", { projectPath, relativePath }),
+
+  write: (projectPath: string, relativePath: string, content: string) =>
+    invoke<void>("file_write", { projectPath, relativePath, content }),
+};
+
+// ============================================================
 // tunnelApi — cloudflared HTTPS 터널
 // ============================================================
 
