@@ -2,7 +2,9 @@
 
 pub mod assets;
 pub mod export;
+pub mod graph;
 pub mod preview;
 pub mod project;
 pub mod qr;
+pub mod template;
 pub mod tunnel;

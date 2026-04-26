@@ -5,10 +5,16 @@
  */
 
 import { create } from "zustand";
-import type { Project, SceneObject, Asset, AssetType, TrackingConfig } from "@/shared/types";
-import { projectApi, assetApi, previewApi, exportApi, type PreviewInfo, type ExportResult } from "@/tauri/api";
+import type { Project, SceneObject, Asset, AssetType, TrackingConfig, Graph, GraphNode } from "@/shared/types";
+import { projectApi, assetApi, previewApi, exportApi, graphApi, type PreviewInfo, type ExportResult } from "@/tauri/api";
 import { newId } from "@/shared/ids";
 import { injectSchemaVersion } from "@/shared/schemaVersion";
+
+const EMPTY_GRAPH: Graph = {
+  schemaVersion: "0.1.0",
+  nodes: [],
+  edges: [],
+};
 
 // ============================================================
 // 상태 인터페이스
@@ -21,8 +27,14 @@ interface ProjectState {
   /** 현재 프로젝트 데이터 (미열림 시 null) */
   project: Project | null;
 
+  /** Event Graph (graph.webar.json). 프로젝트가 열려 있으면 항상 객체. */
+  graph: Graph | null;
+
   /** 뷰포트에서 선택된 오브젝트 ID (없으면 null) */
   selectedObjectId: string | null;
+
+  /** 노드 그래프에서 선택된 그래프 노드 ID. selectedObjectId 와 상호 배타. */
+  selectedGraphNodeId: string | null;
 
   /** 마지막 저장 이후 변경이 있으면 true */
   isDirty: boolean;
@@ -30,6 +42,12 @@ interface ProjectState {
   // --- preview slice ---
   isPreviewRunning: boolean;
   previewInfo: PreviewInfo | null;
+
+  /**
+   * When non-null, the project at this path is missing template files
+   * (index.html / custom.js) and the user should be asked to materialize.
+   */
+  pendingMigrationPath: string | null;
 
   // --- 프로젝트 수준 액션 ---
 
@@ -47,6 +65,15 @@ interface ProjectState {
 
   /** 프로젝트의 tracking 설정을 patch 로 갱신한다. */
   setTracking: (patch: Partial<TrackingConfig>) => void;
+
+  /** Event Graph 전체를 교체. saveProject 호출 전까지 메모리에만 반영. */
+  setGraph: (graph: Graph) => void;
+
+  /** 그래프 노드를 patch 로 업데이트. `id` 와 `type` 는 보존. */
+  updateGraphNode: (id: string, patch: Partial<GraphNode>) => void;
+
+  /** 그래프 노드를 선택 (null 전달 시 해제). 선택 시 selectedObjectId 는 자동 해제. */
+  selectGraphNode: (id: string | null) => void;
 
   // --- 오브젝트 수준 액션 ---
 
@@ -86,6 +113,14 @@ interface ProjectState {
   /** 프로젝트를 outputDir 에 정적 사이트로 export 한다. */
   exportProject: (outputDir: string) => Promise<ExportResult>;
 
+  // --- migration slice 액션 ---
+
+  /** Confirm and run the template materialization. Idempotent. Clears pendingMigrationPath. */
+  runPendingMigration: () => Promise<void>;
+
+  /** Dismiss without migrating (user said "later"). Clears pendingMigrationPath. */
+  dismissPendingMigration: () => void;
+
   // --- scene 편집 액션 ---
 
   /**
@@ -103,10 +138,13 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   // --- 초기 상태 ---
   projectPath: null,
   project: null,
+  graph: null,
   selectedObjectId: null,
+  selectedGraphNodeId: null,
   isDirty: false,
   isPreviewRunning: false,
   previewInfo: null,
+  pendingMigrationPath: null,
 
   // ----------------------------------------------------------------
   // newProject
@@ -114,9 +152,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   // ----------------------------------------------------------------
   newProject: async (path: string, title: string) => {
     const project = await projectApi.new(path, title);
+    // Rust 의 project_new 가 빈 graph.webar.json 을 동시에 생성하므로 메모리에도 빈 그래프 세팅.
     set({
       projectPath: path,
       project,
+      graph: { ...EMPTY_GRAPH },
       isDirty: false,
       selectedObjectId: null,
     });
@@ -128,12 +168,29 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   // ----------------------------------------------------------------
   openProject: async (path: string) => {
     const project = await projectApi.open(path);
+    // graph.webar.json 을 별도 로드. Rust 측 graph_load 가 파일 부재 시 빈 그래프 fallback 반환.
+    const graph = await graphApi.load(path);
     set({
       projectPath: path,
       project,
+      graph,
       isDirty: false,
       selectedObjectId: null,
     });
+
+    // 구프로젝트 호환: index.html / custom.js 가 없으면 사용자에게 마이그레이션 제안.
+    // Rust 커맨드가 아직 등록 안 됐을 수 있으므로 실패해도 openProject 자체는 성공시킨다.
+    try {
+      const needs = await projectApi.needsTemplateMaterialization(path);
+      if (needs) {
+        set({ pendingMigrationPath: path });
+      }
+    } catch (err) {
+      console.warn(
+        "[projectStore] needsTemplateMaterialization 호출 실패 — 마이그레이션 검사 건너뜀.",
+        err,
+      );
+    }
   },
 
   // ----------------------------------------------------------------
@@ -141,7 +198,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   // Tauri 커맨드: project_save (에이전트 D 구현)
   // ----------------------------------------------------------------
   saveProject: async () => {
-    const { projectPath, project } = get();
+    const { projectPath, project, graph } = get();
     if (!projectPath || !project) {
       return;
     }
@@ -154,6 +211,10 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       },
     });
     await projectApi.save(projectPath, updated);
+    // graph 도 함께 디스크 동기화 (있을 때만)
+    if (graph) {
+      await graphApi.save(projectPath, graph);
+    }
     set({ project: updated, isDirty: false });
   },
 
@@ -201,6 +262,34 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
 
   // ----------------------------------------------------------------
+  // setGraph — Event Graph 전체 교체. NodeGraph 가 React Flow 상태 변경 시 호출.
+  // 디스크 저장은 saveProject 가 일괄 처리.
+  // ----------------------------------------------------------------
+  setGraph: (graph: Graph) => {
+    set({ graph, isDirty: true });
+  },
+
+  updateGraphNode: (id: string, patch: Partial<GraphNode>) => {
+    set((state) => {
+      if (!state.graph) return {};
+      const nodes = state.graph.nodes.map((n) =>
+        n.id === id ? ({ ...n, ...patch, id: n.id, type: n.type } as GraphNode) : n,
+      );
+      return {
+        graph: { ...state.graph, nodes },
+        isDirty: true,
+      };
+    });
+  },
+
+  selectGraphNode: (id: string | null) => {
+    set({
+      selectedGraphNodeId: id,
+      selectedObjectId: id ? null : useProjectStore.getState().selectedObjectId,
+    });
+  },
+
+  // ----------------------------------------------------------------
   // setTracking — tracking 설정 patch (Inspector tracking 영역 등에서 사용)
   // ----------------------------------------------------------------
   setTracking: (patch) => {
@@ -218,10 +307,13 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
 
   // ----------------------------------------------------------------
-  // selectObject — 순수 UI 상태, Tauri 호출 없음
+  // selectObject — 순수 UI 상태, Tauri 호출 없음. 그래프 선택 자동 해제.
   // ----------------------------------------------------------------
   selectObject: (id: string | null) => {
-    set({ selectedObjectId: id });
+    set({
+      selectedObjectId: id,
+      selectedGraphNodeId: id ? null : get().selectedGraphNodeId,
+    });
   },
 
   // ----------------------------------------------------------------
@@ -334,6 +426,23 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }
 
     return result;
+  },
+
+  // ----------------------------------------------------------------
+  // runPendingMigration / dismissPendingMigration
+  //
+  // openProject 가 감지한 누락 템플릿 파일을 사용자가 동의했을 때 채워 넣는다.
+  // materializeTemplate 은 Rust 측에서 idempotent 하게 구현되어 있다.
+  // ----------------------------------------------------------------
+  runPendingMigration: async () => {
+    const path = get().pendingMigrationPath;
+    if (!path) return;
+    await projectApi.materializeTemplate(path);
+    set({ pendingMigrationPath: null });
+  },
+
+  dismissPendingMigration: () => {
+    set({ pendingMigrationPath: null });
   },
 
   // ----------------------------------------------------------------

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useProjectStore, useSelectedObject } from "@/state/projectStore";
 import type { Vector3, Vector3OrScalar } from "@/shared/types";
+import GraphNodeInspector from "./GraphNodeInspector";
 import "./Inspector.css";
 
 // 파일명 추출 (드롭다운 표시용)
@@ -189,9 +190,19 @@ function Vec3Row({
  */
 function Inspector() {
   const selectedObject = useSelectedObject();
+  const selectedGraphNodeId = useProjectStore((s) => s.selectedGraphNodeId);
+  const graph = useProjectStore((s) => s.graph);
   const { updateObject } = useProjectStore();
 
   const [uniformScale, setUniformScale] = useState(false);
+
+  // Graph 노드 선택이 우선. 노드 그래프 작업 흐름에서 우측 패널이 즉시 노드 편집 폼으로 전환.
+  if (selectedGraphNodeId && graph) {
+    const node = graph.nodes.find((n) => n.id === selectedGraphNodeId);
+    if (node) {
+      return <GraphNodeInspector node={node} />;
+    }
+  }
 
   if (!selectedObject) {
     return (

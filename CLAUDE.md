@@ -85,7 +85,7 @@ open-ar-editor/
 
 1. **플랫폼 종속 회피** — 결과물은 Tauri/계정/CDN 없이도 실행되어야 한다.
 2. **JSON 기반 저장** — 노드는 JS 코드를 생성하지 않는다. 런타임이 JSON을 해석해 실행한다.
-3. **작가용 용어 우선** — 기술 용어는 한국어 작가 친화 표현으로 (`scale` → `크기`, `anchor` → `붙는 기준`).
+3. **UI 문자열은 영문 통일** — 사용자 노출 UI 문자열 (라벨, 카테고리, 탭, 인스펙터 필드명 등) 은 영문으로 작성한다. 기술 용어를 그대로 노출하지 말고 작가 친화적 영문 표현으로 (`scale` → `Size`, `anchor` → `Attached To`). 한국어가 필요하면 추후 i18n layer 로 도입. 한국어는 macOS/Windows 콘솔·git diff·터미널 환경에서 깨지는 사례가 반복돼 source-of-truth 영문이 안전하다. 단, **사용자 데이터** (작품 제목·설명, 오브젝트 라벨) 와 **개발자 문서** (이 CLAUDE.md, docs/) 는 한국어 유지.
 4. **Tauri는 껍데기** — 편집 로직은 모두 React. Tauri 백엔드는 파일 시스템 / export / preview server / QR만 담당.
 5. **1차 범위 고정** — 이미지 타깃 기반 AR만. 월드/바닥/VPS/object tracking은 건드리지 않음.
 6. **Event Graph vs Signal Graph 분리** — 1회성 이벤트와 매 프레임 바인딩을 구조적으로 구분.
@@ -105,7 +105,7 @@ open-ar-editor/
 | 7 | 3-5주 | MindAR Face Tracking + foreheadAnchor |
 | 8 | 3-5주 | AR.js 마커/GPS |
 
-**현재 단계**: MVP 1 완료 (runtime-prototype/ + Tauri 껍데기 + JSON 스키마 5종). MVP 2 Wave 1 진행 중 — foundation (src/shared, src/state, src/tauri/api, src/services/exportPlan) + Tauri 백엔드 커맨드. 실제 빌드 검증은 사용자가 `pnpm install && pnpm tauri dev` 로.
+**현재 단계**: MVP 1·2·3 완료. MVP 3 = React Flow Event Graph (`event.targetFound` → `action.playSound` end-to-end 핸드폰 검증 ✅). 자세한 내용은 `docs/진행-상황-mvp3.md`. 빌드/실행은 `npm install && npm run tauri dev`.
 
 ## 스키마 확정 사항 (v0.1.0)
 
@@ -129,7 +129,39 @@ open-ar-editor/
 
 ## 작업 지시 받을 때
 
-- 스펙 문서에서 해당 단계 섹션을 먼저 읽는다.
+- 스펙 문서 (`docs/제작-단계.md`) 의 해당 단계 섹션을 먼저 읽는다.
+- 가장 최근 진행 상황 (`docs/진행-상황-mvp3.md`) 을 훑어 어디까지 됐는지 / 결정된 사항이 뭔지 본다.
 - JSON 스키마부터 설계한다 (코드 생성이 아닌 JSON 해석 방식).
-- 작가용 UI 문구는 한국어로 써본다.
+- 사용자 노출 UI 문자열은 영문 (원칙 3).
 - 모바일 실기기 검증을 전제로 구조를 짠다.
+
+## 알려진 함정 (이 환경에서 시간 잡아먹은 것들)
+
+이전 세션에서 디버깅에 시간 많이 들었던 함정들. 비슷한 증상 보이면 여기 먼저 확인.
+
+### 진단 메타-패턴: Tauri webview vs 일반 브라우저 격리
+Tauri 창 안에서만 안 되고 콘솔에도 에러 없을 땐, **같은 Vite URL (localhost:1420) 을 일반 Safari/Chrome 또는 Playwright headless WebKit 으로 띄워 동일 코드를 테스트**. 둘 다 안 되면 코드 문제, Tauri 만 안 되면 webview 정책 (drag-drop / clipboard / autoplay 등) 의심. 이걸 안 하고 코드만 만지면 한 시간씩 날린다.
+
+### Tauri 2 `dragDropEnabled` 기본 true
+- 증상: webview 안에서 HTML5 드래그-드롭이 grab 까지 되고 + 표시까지 뜨는데 `drop` 이벤트 자체가 발화 안 함
+- 고침: `tauri.conf.json` 의 `app.windows[].dragDropEnabled = false`. webview 내부에서 DnD UI 만들 거면 거의 default. 변경 후 cargo 재컴파일 필요.
+
+### WKWebView 가 dataTransfer 의 커스텀 MIME 페이로드 누락
+- 증상: `application/x-foo` 같은 커스텀 MIME 으로 `setData` 해도 `getData` 가 빈 문자열
+- 고침: 같은 JS 모듈 안의 변수를 데이터 채널로 사용. dataTransfer 는 cursor 표시용으로 `text/plain` 만.
+
+### React Flow controlled mode + transient change race
+- 증상: 새 노드 드롭하면 store 에 잠깐 추가됐다가 React Flow 의 `dimensions` change 가 OLD closure 로 onNodesChange 발화하며 사라짐
+- 고침: `useNodesState` / `useEdgesState` (uncontrolled) 로 React Flow 자체 view state 관리 + drop / connect / drag stop / delete 같은 meaningful 이벤트에서만 store sync. 프로젝트 변경 시 `<Canvas key={projectPath} />` 로 fresh remount.
+
+### iOS / WKWebView 의 AudioContext 사용자 제스처 정책
+- 증상: 카드 인식 콜백에서 `_playSound` 호출하는데 소리 안 남
+- 고침: AudioContext 를 **사용자 제스처 (시작하기 버튼 onclick) 안에서** 생성/resume. 카메라/MindAR 콜백 같은 indirect path 안에서 lazy 생성하면 iOS 가 suspended 풀어주지 않음.
+
+### cargo 가 변경 못 잡는 패턴
+- 증상: `.rs` 또는 `tauri.conf.json` 변경 후 `Finished in 0.18s` 로 옛 binary 가 그대로 재실행
+- 고침: `touch src-tauri/src/{lib,main}.rs` 후 재시작. 빌드 로그에 `Compiling open-ar-editor` 라인이 떠야 진짜 재컴파일.
+
+### `npm run tauri dev` 재시작 시 포트 점유
+- 증상: `Error: Port 1420 is already in use`
+- 고침: `lsof -ti:1420 | xargs -r kill -9` 후 재시작. 부모 프로세스 kill 해도 vite 자식이 살아남는 케이스 있음.

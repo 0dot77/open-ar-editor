@@ -4,6 +4,7 @@ import LeftPanel from "@/editor/left-panel/LeftPanel";
 import Viewport from "@/editor/viewport/Viewport";
 import Inspector from "@/editor/inspector/Inspector";
 import BottomTabs from "@/editor/bottom-tabs/BottomTabs";
+import MigrationModal from "@/editor/migration-modal/MigrationModal";
 
 /**
  * App — 에디터 전체 레이아웃 뼈대
@@ -41,6 +42,9 @@ function App() {
       <footer className="area-bottom">
         <BottomTabs />
       </footer>
+
+      {/* 구 프로젝트 호환 마이그레이션 모달 (pendingMigrationPath 가 있을 때만 렌더) */}
+      <MigrationModal />
     </div>
   );
 }

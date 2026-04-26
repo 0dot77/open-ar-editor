@@ -215,11 +215,28 @@ pub fn do_export(project_path: &str, output_dir: &str) -> Result<ExportResult, S
     }
 
     // 4. index.html 복사
-    let index_src = runtime_prototype.join("index.html");
-    if index_src.exists() {
-        copy_file(&index_src, &output.join("index.html"), &mut files)?;
+    //    "project-as-site" 아키텍처: 프로젝트 폴더의 index.html (사용자 편집 가능)
+    //    이 우선이고, 없을 때만 runtime-prototype/index.html 로 fallback 한다.
+    //    fallback 케이스는 project_new 이전에 만들어졌거나 사용자가 실수로 지운
+    //    상황 — project_materialize_template 으로 보충하라는 신호.
+    let project_index = project_dir.join("index.html");
+    let template_index = runtime_prototype.join("index.html");
+    if project_index.exists() {
+        copy_file(&project_index, &output.join("index.html"), &mut files)?;
+    } else if template_index.exists() {
+        log::warn!(
+            "프로젝트 폴더에 index.html 이 없어 runtime-prototype 템플릿으로 fallback 합니다. \
+             project_materialize_template 을 호출해 마이그레이션하세요."
+        );
+        copy_file(&template_index, &output.join("index.html"), &mut files)?;
     } else {
-        log::warn!("runtime-prototype/index.html 이 없습니다. export 결과물에 index.html 이 빠집니다.");
+        log::warn!("index.html 을 찾을 수 없습니다. export 결과물에 index.html 이 빠집니다.");
+    }
+
+    // 4b. custom.js 복사 — 프로젝트 폴더에 있을 때만 (사용자 영역, optional).
+    let custom_js_src = project_dir.join("custom.js");
+    if custom_js_src.exists() {
+        copy_file(&custom_js_src, &output.join("custom.js"), &mut files)?;
     }
 
     // 5. runtime/ 복사
@@ -276,7 +293,13 @@ pub fn do_export(project_path: &str, output_dir: &str) -> Result<ExportResult, S
     .map_err(|e| format!("manifest.json 쓰기 실패: {e}"))?;
     files.push(manifest_path.to_string_lossy().to_string());
 
-    // 9. source/ — 원본 편집 파일 보존
+    // 9. graph.webar.json 을 export root 에도 복사 — 런타임이 fetch 한다.
+    let graph_src = project_dir.join("graph.webar.json");
+    if graph_src.exists() {
+        copy_file(&graph_src, &output.join("graph.webar.json"), &mut files)?;
+    }
+
+    // 10. source/ — 원본 편집 파일 보존
     let source_dir = output.join("source");
     std::fs::create_dir_all(&source_dir)
         .map_err(|e| format!("source/ 폴더 생성 실패: {e}"))?;

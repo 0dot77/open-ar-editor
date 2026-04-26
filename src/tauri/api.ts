@@ -10,7 +10,7 @@
  */
 
 import { invoke } from "@tauri-apps/api/core";
-import type { Project, Asset, AssetType } from "@/shared/types";
+import type { Project, Asset, AssetType, Graph } from "@/shared/types";
 
 // ============================================================
 // 반환 타입 정의
@@ -71,6 +71,41 @@ export const projectApi = {
   /** Project 객체를 project.webar.json 으로 저장한다. */
   save: (path: string, project: Project) =>
     invoke<void>("project_save", { path, project }),
+
+  /**
+   * 프로젝트 폴더에 index.html / custom.js 가 누락되어 있는지 확인한다.
+   * 둘 중 하나라도 없으면 true.
+   */
+  needsTemplateMaterialization: (path: string) =>
+    invoke<boolean>("project_needs_template_materialization", { projectPath: path }),
+
+  /**
+   * 누락된 index.html / custom.js 를 프로젝트 폴더에 기록한다.
+   * 이미 존재하는 파일은 건너뛰는 idempotent 커맨드.
+   */
+  materializeTemplate: (path: string) =>
+    invoke<void>("project_materialize_template", { projectPath: path }),
+};
+
+// ============================================================
+// graphApi — Event Graph CRUD (graph.webar.json)
+// ============================================================
+
+/**
+ * Event Graph 커맨드 래퍼.
+ *
+ * Rust 커맨드:
+ *   graph_load(project_path: String) -> Graph
+ *   graph_save(project_path: String, graph: Graph) -> ()
+ *
+ * Rust 측은 raw JSON 패스스루. 노드 / 엣지 스키마는 src/shared/types.ts 가 단일 진실 원천.
+ */
+export const graphApi = {
+  load: (projectPath: string) =>
+    invoke<Graph>("graph_load", { projectPath }),
+
+  save: (projectPath: string, graph: Graph) =>
+    invoke<void>("graph_save", { projectPath, graph }),
 };
 
 // ============================================================

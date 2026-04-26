@@ -49,3 +49,6 @@ runtime-prototype/assets/targets/*.mind
 
 # OMC (oh-my-claudecode) 도구 캐시
 .omc/
+
+# Local Claude settings
+.claude/

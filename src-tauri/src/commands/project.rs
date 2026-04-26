@@ -4,6 +4,7 @@
 // project_open : 기존 project.webar.json 파싱
 // project_save : project.webar.json 덮어쓰기 (updatedAt 서버 side 결정)
 
+use crate::commands::template;
 use crate::models::{Project, ProjectMetadata, Scene, Tracking};
 use chrono::Utc;
 use std::path::Path;
@@ -141,6 +142,30 @@ pub fn project_new(path: String, title: String) -> Result<Project, String> {
     });
     write_json_pretty(&project_dir.join("bindings.webar.json"), &bindings_json)?;
 
+    // index.html / custom.js 머터리얼라이즈 — "project-as-site" Phase 1.
+    // 작가가 VS Code 등으로 직접 편집할 수 있는 상태로 프로젝트 폴더에 살아 있다.
+    // 템플릿(runtime-prototype/index.html) 을 못 찾는 경우 (릴리스 번들 등) 는
+    // graceful 하게 skip — project_new 자체는 실패시키지 않는다.
+    match template::render_initial_index_html(&title) {
+        Ok(html) => {
+            let index_path = project_dir.join("index.html");
+            if let Err(e) = std::fs::write(&index_path, html) {
+                log::warn!("index.html 쓰기 실패 ({}): {e}", index_path.display());
+            }
+        }
+        Err(e) => {
+            log::warn!(
+                "index.html 머터리얼라이즈 skip — 템플릿을 찾을 수 없습니다: {e}. \
+                 추후 project_materialize_template 로 보충 가능."
+            );
+        }
+    }
+
+    let custom_js_path = project_dir.join("custom.js");
+    if let Err(e) = std::fs::write(&custom_js_path, template::render_initial_custom_js()) {
+        log::warn!("custom.js 쓰기 실패 ({}): {e}", custom_js_path.display());
+    }
+
     log::info!("새 프로젝트 생성됨: {:?} (제목: {})", project_dir, title);
     Ok(project)
 }
@@ -193,5 +218,79 @@ pub fn project_save(path: String, project: Project) -> Result<(), String> {
     write_json_pretty(&json_path, &updated)?;
 
     log::info!("프로젝트 저장됨: {:?}", project_dir);
+    Ok(())
+}
+
+// ── "project-as-site" 머터리얼라이즈 마이그레이션 ──────────────────────────────
+//
+// project_new 가 도입되기 전에 만들어진 프로젝트는 index.html / custom.js 가
+// 폴더에 없을 수 있다. 프론트엔드가 project_open 직후 needs 를 체크하고,
+// 필요 시 사용자에게 "이 프로젝트를 site 화 할까요?" 를 묻고 머터리얼라이즈한다.
+
+/// 프로젝트 폴더에 index.html 또는 custom.js 가 없으면 true.
+///
+/// 둘 중 하나라도 빠져 있으면 머터리얼라이즈 후보로 본다.
+#[tauri::command]
+pub fn project_needs_template_materialization(project_path: String) -> Result<bool, String> {
+    let project_dir = Path::new(&project_path);
+    if !project_dir.is_dir() {
+        return Err(format!("프로젝트 폴더가 아닙니다: {project_path}"));
+    }
+
+    let index_missing = !project_dir.join("index.html").exists();
+    let custom_missing = !project_dir.join("custom.js").exists();
+    Ok(index_missing || custom_missing)
+}
+
+/// 빠진 index.html / custom.js 를 채워 넣는다.
+///
+/// - 이미 존재하는 파일은 절대 덮어쓰지 않는다 (사용자 편집 보호).
+/// - 템플릿 (runtime-prototype/index.html) 을 못 찾으면 index.html 만 skip 하고
+///   custom.js 는 가능한 한 생성한다.
+/// - title 은 project.webar.json 에서 읽어온다. 실패 시 "open-ar-editor" 로 fallback.
+#[tauri::command]
+pub fn project_materialize_template(project_path: String) -> Result<(), String> {
+    let project_dir = Path::new(&project_path);
+    if !project_dir.is_dir() {
+        return Err(format!("프로젝트 폴더가 아닙니다: {project_path}"));
+    }
+
+    // 제목 결정 — project.webar.json 에서 읽되, 못 읽으면 fallback.
+    let title = match read_project_file(project_dir) {
+        Ok(p) => {
+            let t = p.metadata.title.trim().to_string();
+            if t.is_empty() { "open-ar-editor".to_string() } else { t }
+        }
+        Err(e) => {
+            log::warn!(
+                "project.webar.json 을 읽지 못해 기본 제목으로 머터리얼라이즈합니다: {e}"
+            );
+            "open-ar-editor".to_string()
+        }
+    };
+
+    let index_path = project_dir.join("index.html");
+    if !index_path.exists() {
+        match template::render_initial_index_html(&title) {
+            Ok(html) => {
+                std::fs::write(&index_path, html).map_err(|e| {
+                    format!("index.html 쓰기 실패 ({}): {e}", index_path.display())
+                })?;
+                log::info!("index.html 머터리얼라이즈됨: {}", index_path.display());
+            }
+            Err(e) => {
+                log::warn!("index.html 머터리얼라이즈 skip — 템플릿 부재: {e}");
+            }
+        }
+    }
+
+    let custom_js_path = project_dir.join("custom.js");
+    if !custom_js_path.exists() {
+        std::fs::write(&custom_js_path, template::render_initial_custom_js()).map_err(|e| {
+            format!("custom.js 쓰기 실패 ({}): {e}", custom_js_path.display())
+        })?;
+        log::info!("custom.js 머터리얼라이즈됨: {}", custom_js_path.display());
+    }
+
     Ok(())
 }
