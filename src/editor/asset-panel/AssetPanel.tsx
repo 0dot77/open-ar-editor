@@ -16,7 +16,7 @@ interface AssetTypeOption {
 }
 
 const ASSET_TYPE_OPTIONS: AssetTypeOption[] = [
-  { value: "target",  label: "타깃 이미지",  extensions: ["png", "jpg", "jpeg"], filterName: "타깃 이미지" },
+  { value: "target",  label: "이미지 타깃 (.mind)",  extensions: ["mind"], filterName: "MindAR 타깃 파일 (.mind)" },
   { value: "model",   label: "3D 모델",      extensions: ["glb", "gltf"],         filterName: "3D 모델 (GLB)" },
   { value: "image",   label: "이미지",        extensions: ["png", "jpg", "jpeg", "webp"], filterName: "이미지" },
   { value: "video",   label: "영상",          extensions: ["mp4", "webm"],         filterName: "영상" },
@@ -80,7 +80,12 @@ function AssetPanel() {
 
     try {
       const selectedPath = await open({
-        filters: [{ name: typeOption.filterName, extensions: typeOption.extensions }],
+        // macOS NSOpenPanel 은 등록 안 된 확장자를 회색 처리해 선택을 막는다.
+        // .mind 처럼 비표준 확장자도 다이얼로그에서 보일 수 있게 "모든 파일" 옵션을 동봉.
+        filters: [
+          { name: typeOption.filterName, extensions: typeOption.extensions },
+          { name: "모든 파일", extensions: ["*"] },
+        ],
         title: `${typeOption.label} 파일 선택`,
       });
       if (!selectedPath || typeof selectedPath !== "string") return;

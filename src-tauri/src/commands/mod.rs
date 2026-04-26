@@ -5,3 +5,4 @@ pub mod export;
 pub mod preview;
 pub mod project;
 pub mod qr;
+pub mod tunnel;

@@ -3,6 +3,82 @@ import { useProjectStore, useSelectedObject } from "@/state/projectStore";
 import type { Vector3, Vector3OrScalar } from "@/shared/types";
 import "./Inspector.css";
 
+// 파일명 추출 (드롭다운 표시용)
+function basename(path: string): string {
+  return path.replace(/\\/g, "/").split("/").pop() ?? path;
+}
+
+// ============================================================
+// 프로젝트 트래킹 섹션 — 오브젝트 선택 없을 때 표시
+// ============================================================
+
+function TrackingSection() {
+  const { project, setTracking } = useProjectStore();
+  if (!project) return null;
+
+  if (project.tracking.type !== "image") {
+    return (
+      <div className="inspector__section">
+        <span className="inspector__section-title">이미지 트래킹</span>
+        <p className="inspector__hint">
+          {project.tracking.type} 트래킹 모드는 아직 지원하지 않습니다.
+        </p>
+      </div>
+    );
+  }
+
+  const tracking = project.tracking;
+  const targetAssets = project.assets.filter((a) => a.type === "target");
+  const imageAssets = project.assets.filter((a) => a.type === "image");
+
+  return (
+    <>
+      <div className="inspector__section">
+        <span className="inspector__section-title">이미지 타깃 (.mind)</span>
+        <select
+          className="inspector__number-input"
+          value={tracking.target}
+          onChange={(e) => setTracking({ target: e.target.value })}
+        >
+          <option value="">선택 안 함</option>
+          {targetAssets.map((a) => (
+            <option key={a.id} value={a.path}>
+              {basename(a.path)}
+            </option>
+          ))}
+        </select>
+        {targetAssets.length === 0 && (
+          <p className="inspector__hint">
+            에셋 패널에서 <strong>.mind 파일</strong>을 임포트하세요. <br />
+            테스트용 sample은 <code>runtime-prototype/assets/targets/card.mind</code>.
+          </p>
+        )}
+        {!tracking.target && targetAssets.length > 0 && (
+          <p className="inspector__hint">
+            .mind 파일이 지정되지 않으면 핸드폰 미리보기에서 AR 이 시작되지 않습니다.
+          </p>
+        )}
+      </div>
+
+      <div className="inspector__section">
+        <span className="inspector__section-title">미리보기 이미지 (선택)</span>
+        <select
+          className="inspector__number-input"
+          value={tracking.preview ?? ""}
+          onChange={(e) => setTracking({ preview: e.target.value || undefined })}
+        >
+          <option value="">선택 안 함</option>
+          {imageAssets.map((a) => (
+            <option key={a.id} value={a.path}>
+              {basename(a.path)}
+            </option>
+          ))}
+        </select>
+      </div>
+    </>
+  );
+}
+
 // ============================================================
 // 유틸리티
 // ============================================================
@@ -121,12 +197,14 @@ function Inspector() {
     return (
       <div className="inspector">
         <div className="inspector__header">
-          <span className="inspector__title">속성</span>
+          <span className="inspector__title">프로젝트 설정</span>
         </div>
         <div className="inspector__body">
-          <div className="inspector__placeholder">
-            <p>선택된 오브젝트 없음</p>
-            <span>뷰포트 또는 장면 목록에서 오브젝트를 선택하세요.</span>
+          <TrackingSection />
+          <div className="inspector__section">
+            <p className="inspector__hint">
+              오브젝트를 선택하면 위치/크기/회전 등 속성을 편집할 수 있습니다.
+            </p>
           </div>
         </div>
       </div>

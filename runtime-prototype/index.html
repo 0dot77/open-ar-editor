@@ -156,6 +156,18 @@
     <button id="btn-start">시작하기</button>
   </div>
 
+  <!-- importmap: bare specifier "three" 를 CDN 절대 URL 로 매핑.
+       MindAR 라이브러리가 내부적으로 import ... from 'three' 를 시도하므로
+       반드시 <script type="module"> 보다 먼저 위치해야 한다. -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+
   <script type="module">
     import { ARSceneLoader } from './runtime/ar-scene-loader.js';
     import { bus } from './runtime/event-bus.js';

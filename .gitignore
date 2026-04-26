@@ -43,3 +43,9 @@ src-tauri/Cargo.lock
 # Runtime prototype local testing
 runtime-prototype/assets/targets/*.mind
 !runtime-prototype/assets/targets/.gitkeep
+# Sample 은 예외 — 즉시 검증 가능하도록 동봉
+!runtime-prototype/assets/targets/card.mind
+!runtime-prototype/assets/targets/card.png
+
+# OMC (oh-my-claudecode) 도구 캐시
+.omc/

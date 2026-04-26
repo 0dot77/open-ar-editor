@@ -51,19 +51,32 @@ fn check_schema_version(version: &str) -> Result<(), String> {
 
 /// 새 프로젝트를 생성하고 초기화된 Project 를 반환한다.
 ///
-/// `path` 가 존재하지 않으면 디렉토리를 생성한다.
-/// 이미 `project.webar.json` 이 있으면 에러를 반환한다.
+/// `path` 는 새로 만들 프로젝트 루트 폴더 경로다.
+/// - 존재하지 않으면 새로 생성한다.
+/// - 이미 존재하더라도 **비어 있으면** 재사용한다.
+/// - 비어 있지 않으면 사용자 데이터 보호를 위해 거부한다.
 #[tauri::command]
 pub fn project_new(path: String, title: String) -> Result<Project, String> {
     let project_dir = Path::new(&path);
 
-    // 디렉토리 생성 (없으면)
-    if !project_dir.exists() {
+    if project_dir.exists() {
+        // 디렉토리가 비어있는지 검사 (file/symlink 면 거부)
+        if !project_dir.is_dir() {
+            return Err(format!("경로가 폴더가 아닙니다: {path}"));
+        }
+        let mut entries = std::fs::read_dir(project_dir)
+            .map_err(|e| format!("폴더를 읽을 수 없습니다 ({path}): {e}"))?;
+        if entries.next().is_some() {
+            return Err(format!(
+                "이미 폴더가 존재하고 비어 있지 않습니다: {path}\n다른 이름을 사용하거나, 빈 폴더를 선택하세요."
+            ));
+        }
+    } else {
         std::fs::create_dir_all(project_dir)
             .map_err(|e| format!("프로젝트 폴더를 만들 수 없습니다: {e}"))?;
     }
 
-    // 이미 프로젝트가 있으면 거부
+    // (이중 안전망) project.webar.json 이 이미 있으면 거부
     let project_json_path = project_dir.join("project.webar.json");
     if project_json_path.exists() {
         return Err("이미 project.webar.json 이 존재합니다. 다른 폴더를 선택하거나 project_open 을 사용하세요.".to_string());
@@ -133,13 +146,24 @@ pub fn project_new(path: String, title: String) -> Result<Project, String> {
 }
 
 /// 기존 프로젝트를 열고 Project 를 반환한다.
+///
+/// `path` 는 프로젝트 루트 폴더 또는 그 안의 `project.webar.json` 파일 경로 어느 쪽이든 받는다.
+/// 파일이 전달되면 부모 디렉토리를 프로젝트 루트로 사용한다.
 #[tauri::command]
 pub fn project_open(path: String) -> Result<Project, String> {
-    let project_dir = Path::new(&path);
+    let raw = Path::new(&path);
 
-    if !project_dir.exists() {
-        return Err(format!("폴더가 존재하지 않습니다: {path}"));
+    if !raw.exists() {
+        return Err(format!("경로가 존재하지 않습니다: {path}"));
     }
+
+    // 파일이면 부모 디렉토리를 루트로 사용
+    let project_dir = if raw.is_file() {
+        raw.parent()
+            .ok_or_else(|| format!("부모 폴더를 찾을 수 없습니다: {path}"))?
+    } else {
+        raw
+    };
 
     let project = read_project_file(project_dir)?;
 

@@ -26,12 +26,25 @@ export interface PreviewInfo {
   port: number;
 }
 
+/** tunnel_start 커맨드의 반환 타입 */
+export interface TunnelInfo {
+  /** cloudflared 가 발급한 https://*.trycloudflare.com URL */
+  url: string;
+  /** QR 코드 data URL (base64 PNG) */
+  qrDataUrl: string;
+}
+
 /** export_project 커맨드의 반환 타입 */
 export interface ExportResult {
   /** export 가 생성된 디렉토리 절대 경로 */
   outputPath: string;
   /** export 에 포함된 파일 목록 (outputPath 기준 상대 경로) */
   files: string[];
+  /**
+   * 정식 export 시: exports[] 에 새 기록이 추가되고 updatedAt 이 갱신된
+   * 최신 Project. preview 임시 export(.preview-tmp) 에서는 undefined.
+   */
+  project?: Project;
 }
 
 // ============================================================
@@ -86,12 +99,20 @@ export const assetApi = {
 /**
  * 미리보기 커맨드 래퍼.
  *
- * Rust 커맨드 (에이전트 D 구현 필요):
+ * Rust 커맨드:
  *   preview_start(project_path: String) -> PreviewInfo
+ *   preview_build_and_start(project_path: String) -> PreviewInfo
  *   preview_stop() -> ()
  */
 export const previewApi = {
-  /** 로컬 preview server 를 시작하고 URL, QR, 포트를 반환한다. */
+  /**
+   * 프로젝트를 `.preview-tmp` 로 export 한 뒤 정적 서빙한다 (권장).
+   * `.preview-tmp` 가 있으면 자동 삭제하므로 사용자 수동 정리가 필요 없다.
+   */
+  buildAndStart: (projectPath: string) =>
+    invoke<PreviewInfo>("preview_build_and_start", { projectPath }),
+
+  /** 임의 폴더를 그대로 정적 서빙한다 (이미 export 된 폴더가 있을 때). */
   start: (projectPath: string) =>
     invoke<PreviewInfo>("preview_start", { projectPath }),
 
@@ -134,4 +155,27 @@ export const qrApi = {
   /** 텍스트를 QR 코드 PNG data URL 로 변환한다. */
   generate: (text: string) =>
     invoke<string>("qr_generate", { text }),
+};
+
+// ============================================================
+// tunnelApi — cloudflared HTTPS 터널
+// ============================================================
+
+/**
+ * cloudflared quick tunnel 래퍼. preview server 의 LAN HTTP 포트를
+ * https://*.trycloudflare.com 으로 노출해 핸드폰 카메라 권한(HTTPS 필수)을
+ * 받을 수 있게 한다.
+ *
+ * Rust 커맨드:
+ *   tunnel_start(port: u16) -> TunnelInfo
+ *   tunnel_stop() -> ()
+ *
+ * cloudflared 가 PATH 에 없으면 한국어 brew install 안내 에러를 throw 한다.
+ */
+export const tunnelApi = {
+  start: (port: number) =>
+    invoke<TunnelInfo>("tunnel_start", { port }),
+
+  stop: () =>
+    invoke<void>("tunnel_stop"),
 };

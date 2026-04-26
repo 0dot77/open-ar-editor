@@ -49,6 +49,26 @@
   margin-top: 8px;
 }
 
+.inspector__hint {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  margin: 8px 0 0;
+}
+
+.inspector__hint code {
+  background: var(--color-bg);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+}
+
+.inspector__hint strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
 /* 섹션 */
 .inspector__section {
   padding: 8px 0;

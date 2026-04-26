@@ -7,6 +7,7 @@ pub mod commands;
 pub mod models;
 
 use commands::preview::PreviewState;
+use commands::tunnel::TunnelState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -14,15 +15,19 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(PreviewState::default())
+        .manage(TunnelState::default())
         .invoke_handler(tauri::generate_handler![
             commands::project::project_new,
             commands::project::project_open,
             commands::project::project_save,
             commands::assets::asset_import,
             commands::preview::preview_start,
+            commands::preview::preview_build_and_start,
             commands::preview::preview_stop,
             commands::export::export_project,
             commands::qr::qr_generate,
+            commands::tunnel::tunnel_start,
+            commands::tunnel::tunnel_stop,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

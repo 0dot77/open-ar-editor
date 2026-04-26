@@ -8,9 +8,10 @@ import { Suspense, useCallback, useRef, useState } from "react";
 import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera, useTexture, Grid } from "@react-three/drei";
+import { convertFileSrc } from "@tauri-apps/api/core";
 
 import { useProjectStore } from "@/state/projectStore";
-import type { SceneObject } from "@/shared/types";
+import type { SceneObject, Asset } from "@/shared/types";
 
 import { SceneObject3D } from "./SceneObject3D";
 import { GizmoControls, GizmoButtons } from "./GizmoControls";
@@ -22,41 +23,56 @@ import "./Viewport.css";
 // 경로 변환 유틸
 // ────────────────────────────────────────────────────────
 
+/** Tauri 환경에서 동작 중인지 (`__TAURI_INTERNALS__` 존재 여부로 판단). */
+function isTauri(): boolean {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
+
 /**
  * asset 경로를 브라우저가 로드할 수 있는 URL 로 변환.
- * Tauri dev: convertFileSrc 사용.
- * 폴백: file:// URL.
+ *
+ * Tauri 환경: `convertFileSrc` 로 asset:// 또는 https://asset.localhost URL 생성.
+ *   tauri.conf.json 의 `app.security.assetProtocol.scope` 안의 경로만 허용된다.
+ * 웹 환경 폴백: file:// URL (vite dev 단독으로 띄워 디버깅할 때만 의미가 있음).
  */
 function makeAssetUrl(projectPath: string | null, relative: string): string {
   // 이미 절대 URL 이면 그대로
-  if (relative.startsWith("http://") || relative.startsWith("https://") || relative.startsWith("blob:")) {
+  if (
+    relative.startsWith("http://") ||
+    relative.startsWith("https://") ||
+    relative.startsWith("blob:") ||
+    relative.startsWith("data:")
+  ) {
     return relative;
   }
   if (!projectPath) return relative;
 
-  try {
-    // Tauri dev 환경에서는 convertFileSrc 를 동적 import 로 사용.
-    // 빌드 전 타입 오류 방지를 위해 dynamic import 사용.
-    // 실제 변환은 비동기지만 여기선 동기 경로를 반환하고
-    // convertFileSrc 결과는 useAssetUrl 훅에서 처리.
-    const sep = projectPath.endsWith("/") ? "" : "/";
-    // Windows 경로를 file:// URL 로
-    const normalized = projectPath.replace(/\\/g, "/");
-    return `file:///${normalized}${sep}${relative}`;
-  } catch (e) {
-    console.warn("[Viewport] assetUrl 변환 실패:", e);
-    return relative;
+  // 절대 경로 조립 (Windows 백슬래시는 슬래시로 통일)
+  const normalizedRoot = projectPath.replace(/\\/g, "/").replace(/\/+$/, "");
+  const normalizedRel = relative.replace(/\\/g, "/").replace(/^\/+/, "");
+  const absolute = `${normalizedRoot}/${normalizedRel}`;
+
+  if (isTauri()) {
+    return convertFileSrc(absolute);
   }
+  return `file:///${absolute}`;
 }
 
 /**
- * Tauri convertFileSrc 를 이용해 URL 을 변환하는 훅.
- * Tauri 환경이 아닐 경우 file:// URL 을 폴백으로 사용.
+ * 에셋 ID 또는 직접 path 를 받아 브라우저 로드 가능한 URL 을 반환한다.
+ *
+ * `SceneObject.src` 는 스키마상 에셋 ID 참조이므로, 먼저 ID 로 lookup 해
+ * `asset.path` 를 얻고 실패 시 입력값을 path 로 간주해 폴백한다
+ * (예: `tracking.preview` 처럼 직접 path 가 들어오는 경우 호환).
  */
-function useAssetUrl(projectPath: string | null) {
+function useAssetUrl(projectPath: string | null, assets: Asset[]) {
   return useCallback(
-    (relative: string) => makeAssetUrl(projectPath, relative),
-    [projectPath]
+    (idOrPath: string) => {
+      const asset = assets.find((a) => a.id === idOrPath);
+      const relative = asset ? asset.path : idOrPath;
+      return makeAssetUrl(projectPath, relative);
+    },
+    [projectPath, assets]
   );
 }
 
@@ -220,7 +236,7 @@ function Viewport() {
   // id → Three.js Object3D 맵
   const meshMap = useRef<Map<string, THREE.Object3D>>(new Map());
 
-  const assetUrl = useAssetUrl(projectPath);
+  const assetUrl = useAssetUrl(projectPath, project?.assets ?? []);
 
   // mesh 등록 콜백
   const handleMeshReady = useCallback(

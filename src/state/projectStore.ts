@@ -5,7 +5,7 @@
  */
 
 import { create } from "zustand";
-import type { Project, SceneObject, Asset, AssetType } from "@/shared/types";
+import type { Project, SceneObject, Asset, AssetType, TrackingConfig } from "@/shared/types";
 import { projectApi, assetApi, previewApi, exportApi, type PreviewInfo, type ExportResult } from "@/tauri/api";
 import { newId } from "@/shared/ids";
 import { injectSchemaVersion } from "@/shared/schemaVersion";
@@ -44,6 +44,9 @@ interface ProjectState {
 
   /** 에셋을 프로젝트에 추가하고 Asset 메타데이터를 반환한다. */
   importAsset: (sourcePath: string, assetType: AssetType) => Promise<Asset>;
+
+  /** 프로젝트의 tracking 설정을 patch 로 갱신한다. */
+  setTracking: (patch: Partial<TrackingConfig>) => void;
 
   // --- 오브젝트 수준 액션 ---
 
@@ -156,7 +159,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   // ----------------------------------------------------------------
   // importAsset
-  // Tauri 커맨드: asset_import (에이전트 D 구현)
+  //
+  // 1. Rust asset_import 호출 → assets/ 로 복사된 Asset 메타데이터 획득
+  // 2. project.assets 에 추가
+  // 3. 자동 wiring — target 타입이고 image 트래킹의 target 이 비어있으면
+  //    그 에셋 path 로 tracking.target 을 채운다. 이후 추가 임포트는
+  //    Inspector 에서 사용자가 직접 변경.
   // ----------------------------------------------------------------
   importAsset: async (sourcePath: string, assetType: AssetType): Promise<Asset> => {
     const { projectPath, project } = get();
@@ -164,13 +172,49 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       throw new Error("[projectStore] 프로젝트가 열려 있지 않습니다.");
     }
     const asset = await assetApi.import(projectPath, sourcePath, assetType);
-    set((state) => ({
-      project: state.project
-        ? { ...state.project, assets: [...state.project.assets, asset] }
-        : null,
-      isDirty: true,
-    }));
+
+    set((state) => {
+      if (!state.project) return {};
+
+      const newAssets = [...state.project.assets, asset];
+      let newTracking = state.project.tracking;
+
+      if (
+        assetType === "target" &&
+        state.project.tracking.type === "image" &&
+        !state.project.tracking.target
+      ) {
+        newTracking = { ...state.project.tracking, target: asset.path };
+      }
+
+      return {
+        project: {
+          ...state.project,
+          assets: newAssets,
+          tracking: newTracking,
+        },
+        isDirty: true,
+      };
+    });
+
     return asset;
+  },
+
+  // ----------------------------------------------------------------
+  // setTracking — tracking 설정 patch (Inspector tracking 영역 등에서 사용)
+  // ----------------------------------------------------------------
+  setTracking: (patch) => {
+    set((state) => {
+      if (!state.project) return {};
+      const merged = {
+        ...state.project.tracking,
+        ...patch,
+      } as TrackingConfig;
+      return {
+        project: { ...state.project, tracking: merged },
+        isDirty: true,
+      };
+    });
   },
 
   // ----------------------------------------------------------------
@@ -240,37 +284,20 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   // ----------------------------------------------------------------
   // startPreview
   //
-  // 흐름:
-  //   1. ${projectPath}/.preview-tmp 경로에 export_project 호출
-  //   2. preview_start(tmpDir) 호출 → PreviewInfo 획득
-  //   3. 상태 갱신
-  //
-  // 한계: .preview-tmp 가 이미 존재하면 Rust export 커맨드가 에러를
-  //   낼 수 있다. 이 경우 한국어 안내 메시지를 throw 한다.
-  //   자동 삭제 및 재시도는 Rust 측 preview_build_and_start 단일 커맨드
-  //   도입 시 처리 예정 (TODO).
+  // 1. 변경 사항이 있으면 먼저 자동 저장 (export 는 디스크의 project.webar.json 읽음)
+  // 2. preview_build_and_start 호출 — 내부에서 export → .preview-tmp 정리 → 서빙
   // ----------------------------------------------------------------
   startPreview: async () => {
-    const { projectPath, project } = get();
+    const { projectPath, project, isDirty, saveProject } = get();
     if (!projectPath || !project) {
       throw new Error("[미리보기] 프로젝트가 열려 있지 않습니다.");
     }
 
-    const tmpDir = `${projectPath}/.preview-tmp`;
-
-    try {
-      await exportApi.project(projectPath, tmpDir);
-    } catch (err) {
-      // .preview-tmp 재사용 충돌 등 export 실패 시 안내
-      throw new Error(
-        `[미리보기] 임시 export 폴더 생성에 실패했습니다.\n` +
-        `"${tmpDir}" 폴더가 이미 존재할 수 있습니다.\n` +
-        `해당 폴더를 수동으로 삭제한 뒤 다시 시도해주세요.\n` +
-        `(원인: ${err instanceof Error ? err.message : String(err)})`
-      );
+    if (isDirty) {
+      await saveProject();
     }
 
-    const previewInfo = await previewApi.start(tmpDir);
+    const previewInfo = await previewApi.buildAndStart(projectPath);
     set({ previewInfo, isPreviewRunning: true });
   },
 
@@ -284,13 +311,28 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   // ----------------------------------------------------------------
   // exportProject
+  //
+  // 1. 변경 사항이 있으면 먼저 자동 저장
+  // 2. export_project 호출 — Rust 가 exports[] 에 기록을 추가하고 갱신된
+  //    project 를 반환하므로, store.project 를 그 값으로 동기화한다.
   // ----------------------------------------------------------------
   exportProject: async (outputDir: string): Promise<ExportResult> => {
-    const { projectPath, project } = get();
+    const { projectPath, project, isDirty, saveProject } = get();
     if (!projectPath || !project) {
       throw new Error("[내보내기] 프로젝트가 열려 있지 않습니다.");
     }
+
+    if (isDirty) {
+      await saveProject();
+    }
+
     const result = await exportApi.project(projectPath, outputDir);
+
+    // Rust 가 exports[] 추가 + updatedAt 갱신한 최신 project 를 함께 돌려준다.
+    if (result.project) {
+      set({ project: result.project, isDirty: false });
+    }
+
     return result;
   },
 

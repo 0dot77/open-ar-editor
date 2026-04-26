@@ -7,10 +7,12 @@
 // 모바일에서 카메라/fetch 가 필요한 경우 사용자가 mkcert 또는 ngrok/cloudflared 같은
 // 터널링 도구를 직접 설정해야 한다. UI 에서 해당 안내를 표시할 것 (프론트엔드 담당).
 
+use crate::commands::export::do_export;
 use crate::commands::qr::generate_qr_data_url;
 use crate::models::PreviewInfo;
 use axum::Router;
 use std::net::SocketAddr;
+use std::path::Path;
 use std::sync::Mutex;
 use tokio::sync::oneshot;
 use tower_http::cors::{Any, CorsLayer};
@@ -68,6 +70,45 @@ pub async fn preview_start(
     project_path: String,
     state: tauri::State<'_, PreviewState>,
 ) -> Result<PreviewInfo, String> {
+    do_serve(&project_path, &state).await
+}
+
+/// 프로젝트를 `.preview-tmp` 에 export 한 뒤 그 폴더를 정적 서빙한다 (단일 커맨드).
+///
+/// `.preview-tmp` 가 이미 있으면 자동 삭제 후 새로 생성한다 — 사용자가 수동
+/// 정리할 필요가 없다.
+#[tauri::command]
+pub async fn preview_build_and_start(
+    project_path: String,
+    state: tauri::State<'_, PreviewState>,
+) -> Result<PreviewInfo, String> {
+    let project_dir = Path::new(&project_path);
+    if !project_dir.is_dir() {
+        return Err(format!("프로젝트 폴더가 아닙니다: {project_path}"));
+    }
+
+    let tmp_dir = project_dir.join(".preview-tmp");
+
+    // 기존 임시 폴더 정리 (preview 재시작 시 충돌 방지)
+    if tmp_dir.exists() {
+        std::fs::remove_dir_all(&tmp_dir)
+            .map_err(|e| format!(".preview-tmp 정리 실패: {e}"))?;
+    }
+
+    let tmp_dir_str = tmp_dir.to_string_lossy().to_string();
+
+    // export
+    do_export(&project_path, &tmp_dir_str)?;
+
+    // serve
+    do_serve(&tmp_dir_str, &state).await
+}
+
+/// `preview_start` 커맨드의 내부 구현 — 다른 커맨드에서 재사용하기 위해 분리.
+async fn do_serve(
+    project_path: &str,
+    state: &tauri::State<'_, PreviewState>,
+) -> Result<PreviewInfo, String> {
     // 기존 서버 종료 — MutexGuard 는 `.await` 전에 드랍되어야 함 (Send 제약)
     let prev_tx = {
         let mut tx_guard = state
@@ -95,7 +136,7 @@ pub async fn preview_start(
         .allow_headers(Any);
 
     // 정적 파일 서빙 — ServeDir
-    let serve_dir = ServeDir::new(&project_path);
+    let serve_dir = ServeDir::new(project_path);
     let app = Router::new()
         .fallback_service(serve_dir)
         .layer(cors);

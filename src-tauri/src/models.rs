@@ -162,6 +162,16 @@ pub struct PreviewInfo {
     pub port: u16,
 }
 
+// ── TunnelInfo ────────────────────────────────────────────────────────────────
+
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct TunnelInfo {
+    /// cloudflared 가 발급한 https://*.trycloudflare.com URL
+    pub url: String,
+    pub qr_data_url: String,
+}
+
 // ── ExportResult ──────────────────────────────────────────────────────────────
 
 #[derive(Serialize, Clone, Debug)]
@@ -169,4 +179,8 @@ pub struct PreviewInfo {
 pub struct ExportResult {
     pub output_path: String,
     pub files: Vec<String>,
+    /// exports[] 에 새로 추가된 기록을 반영한 갱신된 project (정식 export 시).
+    /// 임시 export(.preview-tmp 등) 에서는 None.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub project: Option<Project>,
 }
