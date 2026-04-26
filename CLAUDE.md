@@ -2,6 +2,13 @@
 
 미디어아트 작가를 위한 오픈소스 WebAR 에디터. Tauri 데스크톱 앱에서 이미지 타깃 기반 AR 작품을 편집하고, 순수 정적 웹사이트로 export해 GitHub Pages/Netlify/Vercel/개인 서버에 배포·장기 보존한다.
 
+## 이 앱이 무엇인가
+
+1. **오픈 에디터** — 작가가 자유롭게 사용·수정·재배포할 수 있다. 코드도(MIT) 결과물도(웹 표준) 종속성 없음.
+2. **공간 위 실험 매체** — 자유롭게 공간에 디지털·무형의 것을 올려놓고 빠르게 반복하는 도구. AR 을 *기술 시연* 이 아닌 *작가의 매체* 로 다룬다.
+3. **다양한 AR 기술의 통합** — image / marker / face / GPS / WebXR depth 등 여러 트래킹 모드를 한 에디터에서. 1차 범위는 image, 이후 점진 확장.
+4. **데이터 → 실시간 렌더링이 차별점** — TouchDesigner CHOP Reference 의 데이터 그래프 *방식론* 을 AR 도메인에 가져온다. 다른 AR 에디터들이 "효과 제작기" 라면, 이 앱은 "데이터로 움직이는 AR 을 만드는 도구". 시간/타깃/얼굴/포인터/랜덤/오디오 등 모든 실시간 신호가 동등한 시민이고, 오디오는 그중 하나의 입력 source 일 뿐.
+
 **개발 단계 참조 문서**: `docs/제작-단계.md` (원본은 Obsidian vault `taeyang/01_Projects/강의 & 워크숍/뉴아트클럽-feedhijacking/`에서 복사)
 **도구 비교 문서**: `docs/도구-비교.md` — 8th Wall/Effect House/Lens Studio 비교, 이 프로젝트의 포지셔닝 근거.
 
@@ -82,7 +89,8 @@ open-ar-editor/
 4. **Tauri는 껍데기** — 편집 로직은 모두 React. Tauri 백엔드는 파일 시스템 / export / preview server / QR만 담당.
 5. **1차 범위 고정** — 이미지 타깃 기반 AR만. 월드/바닥/VPS/object tracking은 건드리지 않음.
 6. **Event Graph vs Signal Graph 분리** — 1회성 이벤트와 매 프레임 바인딩을 구조적으로 구분.
-7. **모바일 실기기 검증 필수** — Tauri WebView 테스트로 끝내면 안 됨. iPhone Safari + Android Chrome 필수.
+7. **데이터 참조형 그래프 — 오디오비주얼 앱이 아니다** — TouchDesigner CHOP Reference 의 *방식론* (실시간 채널을 속성에 바인딩) 만 차용한다. 시간/타깃 변환/얼굴/포인터/랜덤/오디오 등 다양한 실시간 신호가 동등한 시민이며, 오디오는 그중 하나의 입력 source 일 뿐이다. "오디오 반응형"·"오디오비주얼" 같은 표현으로 도구를 정체화하지 말 것.
+8. **모바일 실기기 검증 필수** — Tauri WebView 테스트로 끝내면 안 됨. iPhone Safari + Android Chrome 필수.
 
 ## 개발 로드맵
 
@@ -91,7 +99,7 @@ open-ar-editor/
 | 1 | 2-4주 | MindAR 런타임 + Tauri 껍데기 + preview server + QR |
 | 2 | 2-4주 | 이미지 타깃 1개 + GLB 배치 + export |
 | 3 | 4-6주 | React Flow Event Graph (타깃 인식 → 재생 등) |
-| 4 | 4-6주 | Signal Binding (오디오 반응형) |
+| 4 | 4-6주 | Signal Binding (실시간 데이터 → 속성 매 프레임 바인딩) |
 | 5 | 4-6주 | 이미지/영상/사운드 plane, GLB 애니메이션 |
 | 6 | 3-4주 | 작가 템플릿 5종 + 자동 README |
 | 7 | 3-5주 | MindAR Face Tracking + foreheadAnchor |
